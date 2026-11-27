@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/TopstToolkit.App/TopstToolkit.App.csproj" />
+    <Project Path="src/TopstToolkit.Cli/TopstToolkit.Cli.csproj" />
+    <Project Path="src/TopstToolkit.Core/TopstToolkit.Core.csproj" />
+    <Project Path="src/TopstToolkit.Engine/TopstToolkit.Engine.csproj" />
+  </Folder>
+</Solution>

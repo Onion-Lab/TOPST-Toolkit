@@ -1,0 +1,196 @@
+<UserControl x:Class="TopstToolkit.App.Shells.Rail.Pages.DataPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:TopstToolkit.App.Controls"
+             xmlns:vm="clr-namespace:TopstToolkit.App.ViewModels">
+    <!-- Step 3 "데이터" in layout A. DataContext: DataViewModel. -->
+    <DockPanel Margin="32,22,32,20">
+        <DockPanel DockPanel.Dock="Top" LastChildFill="False" Margin="0,0,0,16">
+            <TextBlock DockPanel.Dock="Left" Text="3 데이터" Style="{StaticResource Page.Title}"/>
+            <c:Chip DockPanel.Dock="Left" Text="{Binding SummaryText}" Kind="{Binding SummaryKind}" Margin="10,0,0,0"/>
+            <TextBlock DockPanel.Dock="Right" Text="실제로 쓸 환경에서 찍은 사진일수록 보드에서의 결과가 좋아집니다" Style="{StaticResource Page.Note}"/>
+        </DockPanel>
+
+        <DockPanel DockPanel.Dock="Bottom" LastChildFill="False" Margin="0,16,0,0">
+            <Button DockPanel.Dock="Left" Style="{StaticResource Button.Secondary}" Command="{Binding BackCommand}">
+                <StackPanel Orientation="Horizontal">
+                    <c:Icon Glyph="ArrowLeft" FontSize="12" Margin="0,0,7,0"/>
+                    <TextBlock Text="2 설정" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+            <Button DockPanel.Dock="Right" Style="{StaticResource Button.Secondary}" Command="{Binding NextCommand}">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="다음: 4 빌드" VerticalAlignment="Center"/>
+                    <c:Icon Glyph="ArrowRight" FontSize="12" Margin="7,0,0,0"/>
+                </StackPanel>
+            </Button>
+        </DockPanel>
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="28"/>
+                <ColumnDefinition Width="312"/>
+            </Grid.ColumnDefinitions>
+
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False" Margin="-3,-3,-13,0" Padding="3,3,13,0">
+                <StackPanel>
+                    <TextBlock Text="캘리브레이션 데이터" Style="{StaticResource Text.Field}"/>
+                    <UniformGrid Columns="3" Margin="-6,0,-6,0">
+                        <RadioButton Style="{StaticResource Choice}" GroupName="calib" IsChecked="{Binding IsSamples}" Margin="6,0">
+                            <DockPanel>
+                                <c:Icon DockPanel.Dock="Left" Glyph="Package" FontSize="18" VerticalAlignment="Top" Margin="0,2,10,0"/>
+                                <StackPanel>
+                                    <TextBlock Text="기본 샘플" Style="{StaticResource Text.BodyStrong}" LineHeight="20"/>
+                                    <TextBlock Text="들어 있는 사진 100장" Style="{StaticResource Text.Caption}"/>
+                                </StackPanel>
+                            </DockPanel>
+                        </RadioButton>
+                        <RadioButton Style="{StaticResource Choice}" GroupName="calib" IsChecked="{Binding IsFolder}" Margin="6,0">
+                            <DockPanel>
+                                <c:Icon DockPanel.Dock="Left" Glyph="Photo" FontSize="18" VerticalAlignment="Top" Margin="0,2,10,0"/>
+                                <StackPanel>
+                                    <TextBlock Text="내 사진 폴더" Style="{StaticResource Text.BodyStrong}" LineHeight="20"/>
+                                    <TextBlock Text="실제 환경의 사진" Style="{StaticResource Text.Caption}"/>
+                                </StackPanel>
+                            </DockPanel>
+                        </RadioButton>
+                        <RadioButton Style="{StaticResource Choice}" GroupName="calib" IsChecked="{Binding IsNpy}" Margin="6,0">
+                            <DockPanel>
+                                <c:Icon DockPanel.Dock="Left" Glyph="Grid" FontSize="18" VerticalAlignment="Top" Margin="0,2,10,0"/>
+                                <StackPanel>
+                                    <TextBlock Text="NPY 폴더" Style="{StaticResource Text.BodyStrong}" LineHeight="20"/>
+                                    <TextBlock Text="사진이 아닌 입력" Style="{StaticResource Text.Caption}"/>
+                                </StackPanel>
+                            </DockPanel>
+                        </RadioButton>
+                    </UniformGrid>
+
+                    <Grid Margin="0,16,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="16"/>
+                            <ColumnDefinition Width="200"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="가져오는 곳" Style="{StaticResource Text.Field}"/>
+                            <Border Height="36" BorderBrush="{StaticResource Brush.Border.Default}" BorderThickness="1" CornerRadius="8" Background="{StaticResource Brush.Surface.Rail}">
+                                <DockPanel Margin="12,0,4,0" LastChildFill="True">
+                                    <c:Icon DockPanel.Dock="Left" Glyph="Folder" FontSize="14" Foreground="{StaticResource Brush.Text.Muted}" Margin="0,0,8,0"/>
+                                    <Button DockPanel.Dock="Right" Style="{StaticResource Button.Quiet.Small}" Content="폴더 고르기" Command="{Binding PickFolderCommand}" VerticalAlignment="Center"
+                                            Visibility="{Binding IsSamples, Converter={StaticResource VisibleWhen}, ConverterParameter=invert}"/>
+                                    <TextBlock Text="{Binding FolderText}" Style="{StaticResource Text.Body}" FontSize="13" VerticalAlignment="Center" ToolTip="{Binding FolderText}"/>
+                                </DockPanel>
+                            </Border>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="사용할 장수" Style="{StaticResource Text.Field}"/>
+                            <DockPanel>
+                                <Button DockPanel.Dock="Right" Style="{StaticResource Button.Secondary}" Content="적용" Padding="12,0" Margin="8,0,0,0" Command="{Binding ApplyCountCommand}"
+                                        IsEnabled="{Binding IsBusy, Converter={StaticResource Not}}"/>
+                                <TextBox Style="{StaticResource Input.Number}" Text="{Binding CountText, UpdateSourceTrigger=PropertyChanged}" ToolTip="툴킷 옵션 --num-images"/>
+                            </DockPanel>
+                        </StackPanel>
+                    </Grid>
+
+                    <Border Style="{StaticResource Callout.Danger}" Margin="0,12,0,0" Visibility="{Binding Error, Converter={StaticResource VisibleWhen}}">
+                        <TextBlock Text="{Binding Error}" Style="{StaticResource Callout.Text}"/>
+                    </Border>
+                    <ItemsControl ItemsSource="{Binding Warnings}" Focusable="False">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Style="{StaticResource Callout.Warning}" Margin="0,12,0,0">
+                                    <DockPanel>
+                                        <c:Icon DockPanel.Dock="Left" Glyph="Warning" FontSize="16" Foreground="{StaticResource Brush.Status.Warning}" VerticalAlignment="Top" Margin="0,2,10,0"/>
+                                        <TextBlock Text="{Binding}" Style="{StaticResource Callout.Text}"/>
+                                    </DockPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <!-- a look at what will be used -->
+                    <DockPanel LastChildFill="False" Margin="0,16,0,8">
+                        <TextBlock DockPanel.Dock="Left" Text="쓰는 데이터" Style="{StaticResource Text.Label}"/>
+                        <TextBlock DockPanel.Dock="Right" Text="{Binding MoreText}" Style="{StaticResource Text.Caption}"/>
+                    </DockPanel>
+                    <ItemsControl ItemsSource="{Binding Thumbs}" Focusable="False" Margin="-4">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type vm:Thumb}">
+                                <Border Width="92" Height="70" Margin="4" CornerRadius="8" Background="{StaticResource Brush.Surface.Sunken}" ToolTip="{Binding Name}">
+                                    <Grid>
+                                        <TextBlock Text="{Binding Name}" Style="{StaticResource Text.Caption}" FontSize="10.5" Margin="6" TextWrapping="Wrap" VerticalAlignment="Center" TextAlignment="Center"/>
+                                        <Border CornerRadius="8">
+                                            <Border.Background>
+                                                <ImageBrush ImageSource="{Binding Image}" Stretch="UniformToFill"/>
+                                            </Border.Background>
+                                        </Border>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </ScrollViewer>
+
+            <StackPanel Grid.Column="2" AllowDrop="True" DragOver="OnTestDragOver" Drop="OnTestDrop" Background="Transparent">
+                <Border Style="{StaticResource Card}">
+                    <StackPanel>
+                        <DockPanel LastChildFill="False" Margin="0,0,0,4">
+                            <TextBlock DockPanel.Dock="Left" Text="결과 확인용 사진" Style="{StaticResource Text.Subtitle}"/>
+                            <Button DockPanel.Dock="Right" Style="{StaticResource Button.Secondary.Small}" Command="{Binding AddTestImagesCommand}"
+                                    Visibility="{Binding CanEditTest, Converter={StaticResource VisibleWhen}}">
+                                <StackPanel Orientation="Horizontal">
+                                    <c:Icon Glyph="Add" FontSize="10"/>
+                                    <TextBlock Text="사진" Margin="5,0,0,0" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </DockPanel>
+                        <TextBlock Text="{Binding TestHelp}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,0,0,10"/>
+                        <ScrollViewer MaxHeight="300" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
+                            <ItemsControl ItemsSource="{Binding TestImages}" Focusable="False" Margin="-4">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type vm:Thumb}">
+                                        <Grid Width="132" Height="96" Margin="4" ToolTip="{Binding Name}">
+                                            <Border CornerRadius="8" Background="{StaticResource Brush.Surface.Sunken}"/>
+                                            <TextBlock Text="{Binding Name}" Style="{StaticResource Text.Caption}" Margin="8" TextWrapping="Wrap" VerticalAlignment="Center" TextAlignment="Center"/>
+                                            <Border CornerRadius="8">
+                                                <Border.Background>
+                                                    <ImageBrush ImageSource="{Binding Image}" Stretch="UniformToFill"/>
+                                                </Border.Background>
+                                            </Border>
+                                            <Button Width="22" Height="22" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="4" Cursor="Hand" ToolTip="빼기"
+                                                    Command="{Binding DataContext.RemoveTestImageCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"
+                                                    Visibility="{Binding DataContext.CanEditTest, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource VisibleWhen}}">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border CornerRadius="11" Background="#CC212529">
+                                                            <c:Icon Glyph="Cancel" FontSize="9" Foreground="White"/>
+                                                        </Border>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                            </Button>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Card.Flat}" Margin="0,12,0,0">
+                    <StackPanel>
+                        <TextBlock Text="캘리브레이션이 뭔가요?" Style="{StaticResource Text.BodyStrong}"/>
+                        <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,4,0,0"
+                                   Text="보드의 NPU는 소수 대신 8비트 정수로 계산합니다. 사진을 미리 넣어 보고 각 층의 값이 어느 범위에 있는지 재 두어야 정수로 바꿀 수 있습니다. 정답 표시(라벨)는 필요 없고 사진만 있으면 됩니다."/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </Grid>
+    </DockPanel>
+</UserControl>

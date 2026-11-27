@@ -1,0 +1,131 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:c="clr-namespace:TopstToolkit.App.Controls">
+    <!-- Design tokens (docs/design-system.md v0.1). Screens use these keys only; shared by every screen layout (D9). -->
+
+    <!-- §3.1 brand -->
+    <Color x:Key="Color.Brand.Primary">#3B5998</Color>
+    <Color x:Key="Color.Brand.PrimaryHover">#4A68A8</Color>
+    <Color x:Key="Color.Brand.PrimaryPressed">#2F477A</Color>
+    <Color x:Key="Color.Brand.PrimaryTint">#EFF2F7</Color>
+    <Color x:Key="Color.Topst.Mint">#72E7AD</Color>
+    <Color x:Key="Color.Topst.Blue">#3D8AED</Color>
+    <SolidColorBrush x:Key="Brush.Brand.Primary" Color="{StaticResource Color.Brand.Primary}"/>
+    <SolidColorBrush x:Key="Brush.Brand.PrimaryHover" Color="{StaticResource Color.Brand.PrimaryHover}"/>
+    <SolidColorBrush x:Key="Brush.Brand.PrimaryPressed" Color="{StaticResource Color.Brand.PrimaryPressed}"/>
+    <SolidColorBrush x:Key="Brush.Brand.PrimaryTint" Color="{StaticResource Color.Brand.PrimaryTint}"/>
+    <LinearGradientBrush x:Key="Brush.Topst.Pulse" StartPoint="0,0.5" EndPoint="1,0.5">
+        <GradientStop Color="{StaticResource Color.Topst.Mint}" Offset="0"/>
+        <GradientStop Color="{StaticResource Color.Topst.Blue}" Offset="1"/>
+    </LinearGradientBrush>
+    <!-- the symbol's own gradient: one horizontal run across the 48.6-unit mark -->
+    <LinearGradientBrush x:Key="Brush.Topst.SymbolPulse" MappingMode="Absolute" StartPoint="-3.74,0" EndPoint="53.04,0">
+        <GradientStop Color="{StaticResource Color.Topst.Mint}" Offset="0"/>
+        <GradientStop Color="{StaticResource Color.Topst.Blue}" Offset="1"/>
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="Brush.Topst.Periwinkle" Color="#A4AAFE"/>
+    <SolidColorBrush x:Key="Brush.Topst.Night" Color="#212529"/>
+
+    <!-- §3.2 neutrals and surfaces -->
+    <SolidColorBrush x:Key="Brush.Text.Heading" Color="#111111"/>
+    <SolidColorBrush x:Key="Brush.Text.Primary" Color="#222222"/>
+    <SolidColorBrush x:Key="Brush.Text.Secondary" Color="#636363"/>
+    <SolidColorBrush x:Key="Brush.Text.Muted" Color="#6B7280"/>
+    <SolidColorBrush x:Key="Brush.Text.OnPrimary" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="Brush.Surface.Window" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="Brush.Surface.Rail" Color="#F7F8FA"/>
+    <SolidColorBrush x:Key="Brush.Surface.RailHover" Color="#EDEFF3"/>
+    <SolidColorBrush x:Key="Brush.Surface.Sunken" Color="#F3F4F6"/>
+    <SolidColorBrush x:Key="Brush.Surface.TableHead" Color="#E2EAF4"/>
+    <SolidColorBrush x:Key="Brush.Border.Default" Color="#E5E7EB"/>
+    <SolidColorBrush x:Key="Brush.Border.Strong" Color="#DDDDDD"/>
+    <SolidColorBrush x:Key="Brush.Border.Control" Color="#C4C8CF"/>
+    <SolidColorBrush x:Key="Brush.Log.Background" Color="#212529"/>
+    <SolidColorBrush x:Key="Brush.Log.Text" Color="#E5E7EB"/>
+    <SolidColorBrush x:Key="Brush.Log.Dim" Color="#9CA3AF"/>
+
+    <!-- §3.3 status -->
+    <SolidColorBrush x:Key="Brush.Status.Success" Color="#18794E"/>
+    <SolidColorBrush x:Key="Brush.Status.SuccessBg" Color="#E7F5EE"/>
+    <SolidColorBrush x:Key="Brush.Status.Warning" Color="#9A5B00"/>
+    <SolidColorBrush x:Key="Brush.Status.WarningBg" Color="#FFF4DC"/>
+    <SolidColorBrush x:Key="Brush.Status.WarningDot" Color="#D97706"/>
+    <SolidColorBrush x:Key="Brush.Status.Danger" Color="#C8312A"/>
+    <SolidColorBrush x:Key="Brush.Status.DangerBg" Color="#FDECEA"/>
+
+    <!-- §4 fonts: shipped inside the app -->
+    <FontFamily x:Key="Font.Ui">pack://application:,,,/Assets/Fonts/#Pretendard</FontFamily>
+    <FontFamily x:Key="Font.Brand">pack://application:,,,/Assets/Fonts/#Source Sans 3</FontFamily>
+    <FontFamily x:Key="Font.Mono">pack://application:,,,/Assets/Fonts/#D2Coding</FontFamily>
+    <!-- Windows' own icon fonts (Windows 11 / Windows 10). Icons go through Controls.Icon, so the set can be swapped later. -->
+    <FontFamily x:Key="Font.Icon">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
+
+    <!-- §4 type scale. Every text style keeps Korean words whole when it wraps (c:KeepWords; App.xaml does the same for
+         TextBlocks and Runs without a style). -->
+    <Style x:Key="Text.Base" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource Font.Ui}"/>
+        <Setter Property="LineStackingStrategy" Value="BlockLineHeight"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+        <Setter Property="c:KeepWords.Text" Value="{Binding Text, RelativeSource={RelativeSource Self}}"/>
+    </Style>
+    <Style x:Key="Text.Display" TargetType="TextBlock" BasedOn="{StaticResource Text.Base}">
+        <Setter Property="FontSize" Value="28"/><Setter Property="FontWeight" Value="Bold"/><Setter Property="LineHeight" Value="36"/>
+        <Setter Property="Foreground" Value="{StaticResource Brush.Text.Heading}"/>
+    </Style>
+    <Style x:Key="Text.Title" TargetType="TextBlock" BasedOn="{StaticResource Text.Base}">
+        <Setter Property="FontSize" Value="20"/><Setter Property="FontWeight" Value="Bold"/><Setter Property="LineHeight" Value="28"/>
+        <Setter Property="Foreground" Value="{StaticResource Brush.Text.Heading}"/>
+    </Style>
+    <Style x:Key="Text.Subtitle" TargetType="TextBlock" BasedOn="{StaticResource Text.Base}">
+        <Setter Property="FontSize" Value="16"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="LineHeight" Value="24"/>
+        <Setter Property="Foreground" Value="{StaticResource Brush.Text.Heading}"/>
+    </Style>
+    <Style x:Key="Text.Body" TargetType="TextBlock" BasedOn="{StaticResource Text.Base}">
+        <Setter Property="FontSize" Value="14"/><Setter Property="LineHeight" Value="22"/>
+        <Setter Property="Foreground" Value="{StaticResource Brush.Text.Primary}"/>
+    </Style>
+    <Style x:Key="Text.BodyStrong" TargetType="TextBlock" BasedOn="{StaticResource Text.Body}">
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="{StaticResource Brush.Text.Heading}"/>
+    </Style>
+    <Style x:Key="Text.Secondary" TargetType="TextBlock" BasedOn="{StaticResource Text.Body}">
+        <Setter Property="Foreground" Value="{StaticResource Brush.Text.Secondary}"/>
+    </Style>
+    <Style x:Key="Text.Label" TargetType="TextBlock" BasedOn="{StaticResource Text.Base}">
+        <Setter Property="FontSize" Value="13"/><Setter Property="FontWeight" Value="Medium"/><Setter Property="LineHeight" Value="20"/>
+        <Setter Property="Foreground" Value="{StaticResource Brush.Text.Primary}"/>
+    </Style>
+    <Style x:Key="Text.Caption" TargetType="TextBlock" BasedOn="{StaticResource Text.Base}">
+        <Setter Property="FontSize" Value="12"/><Setter Property="LineHeight" Value="18"/>
+        <Setter Property="Foreground" Value="{StaticResource Brush.Text.Muted}"/>
+    </Style>
+    <Style x:Key="Text.Overline" TargetType="TextBlock" BasedOn="{StaticResource Text.Base}">
+        <Setter Property="FontSize" Value="11"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="LineHeight" Value="16"/>
+        <Setter Property="Foreground" Value="{StaticResource Brush.Text.Muted}"/>
+    </Style>
+    <Style x:Key="Text.Metric" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource Font.Brand}"/>
+        <Setter Property="FontSize" Value="32"/><Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="LineStackingStrategy" Value="BlockLineHeight"/><Setter Property="LineHeight" Value="38"/>
+        <Setter Property="c:KeepWords.Text" Value="{Binding Text, RelativeSource={RelativeSource Self}}"/>
+    </Style>
+    <Style x:Key="Text.Mono" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource Font.Mono}"/>
+        <Setter Property="FontSize" Value="12.5"/>
+        <Setter Property="LineStackingStrategy" Value="BlockLineHeight"/><Setter Property="LineHeight" Value="19"/>
+        <Setter Property="Foreground" Value="{StaticResource Brush.Text.Primary}"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+        <Setter Property="c:KeepWords.Text" Value="{Binding Text, RelativeSource={RelativeSource Self}}"/>
+    </Style>
+
+    <!-- focus: 2px primary ring with a 2px white gap -->
+    <Style x:Key="Focus.Ring">
+        <Setter Property="Control.Template">
+            <Setter.Value>
+                <ControlTemplate>
+                    <Border Margin="-4" CornerRadius="11" BorderThickness="2" BorderBrush="{StaticResource Brush.Brand.Primary}" SnapsToDevicePixels="True"/>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+</ResourceDictionary>

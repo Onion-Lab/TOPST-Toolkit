@@ -1,0 +1,194 @@
+<UserControl x:Class="TopstToolkit.App.Shells.Rail.Pages.HomePage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:TopstToolkit.App.Controls">
+    <!-- Home in layout A. DataContext: HomeViewModel. -->
+    <Grid Margin="32,22,32,20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <DockPanel LastChildFill="False">
+            <StackPanel DockPanel.Dock="Left">
+                <TextBlock Text="홈" Style="{StaticResource Text.Display}"/>
+                <TextBlock Text="TOPST AI-G 보드에 올릴 모델을 준비합니다. 모델 파일이 없으면 모델 모음에서 고르면 됩니다." Style="{StaticResource Text.Secondary}" Margin="0,4,0,0"/>
+            </StackPanel>
+            <Button DockPanel.Dock="Right" Style="{StaticResource Button.Primary}" VerticalAlignment="Bottom" Command="{Binding NewProjectCommand}">
+                <StackPanel Orientation="Horizontal">
+                    <c:Icon Glyph="Add" FontSize="12"/>
+                    <TextBlock Text="새 프로젝트" Margin="7,0,0,0" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+            <Button DockPanel.Dock="Right" Style="{StaticResource Button.Secondary}" VerticalAlignment="Bottom" Margin="0,0,8,0" Command="{Binding QuickCheckCommand}">
+                <StackPanel Orientation="Horizontal">
+                    <c:Icon Glyph="Shield" FontSize="14"/>
+                    <TextBlock Text="모델 빠른 점검" Margin="7,0,0,0" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+        </DockPanel>
+
+        <Grid Grid.Row="1" Margin="0,16,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="28"/>
+                <ColumnDefinition Width="312"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- left: recent projects and the drop zone -->
+            <StackPanel>
+                <Border Style="{StaticResource Callout.Warning}" Margin="0,0,0,12" Visibility="{Binding Notice, Converter={StaticResource VisibleWhen}}">
+                    <TextBlock Text="{Binding Notice}" Style="{StaticResource Callout.Text}"/>
+                </Border>
+                <TextBlock Text="최근 프로젝트" Style="{StaticResource Text.Subtitle}" Margin="0,0,0,12"/>
+
+                <StackPanel Visibility="{Binding HasProjects, Converter={StaticResource VisibleWhen}}">
+                    <Border Background="{StaticResource Brush.Surface.TableHead}" CornerRadius="8" Padding="12,7">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/><ColumnDefinition Width="160"/><ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="110"/><ColumnDefinition Width="96"/><ColumnDefinition Width="36"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="이름" Style="{StaticResource Table.Head}"/>
+                            <TextBlock Grid.Column="1" Text="종류" Style="{StaticResource Table.Head}"/>
+                            <TextBlock Grid.Column="2" Text="상태" Style="{StaticResource Table.Head}"/>
+                            <TextBlock Grid.Column="3" Text="추정 추론 시간" Style="{StaticResource Table.Head}" TextAlignment="Right"/>
+                            <TextBlock Grid.Column="4" Text="마지막 작업" Style="{StaticResource Table.Head}" TextAlignment="Right"/>
+                        </Grid>
+                    </Border>
+                    <ItemsControl ItemsSource="{Binding Recent}" Focusable="False">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Cursor="Hand" Command="{Binding DataContext.OpenCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="row" Background="Transparent" BorderBrush="{StaticResource Brush.Border.Default}" BorderThickness="0,0,0,1" Padding="12,9">
+                                                <ContentPresenter/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="row" Property="Background" Value="{StaticResource Brush.Surface.Rail}"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/><ColumnDefinition Width="160"/><ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="110"/><ColumnDefinition Width="96"/><ColumnDefinition Width="36"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Margin="0,0,12,0">
+                                            <TextBlock Text="{Binding Name}" Style="{StaticResource Text.BodyStrong}" FontSize="13.5" LineHeight="20"/>
+                                            <TextBlock Text="{Binding ModelFile}" Style="{StaticResource Text.Caption}"/>
+                                        </StackPanel>
+                                        <TextBlock Grid.Column="1" Text="{Binding Kind}" Style="{StaticResource Text.Body}" FontSize="13" VerticalAlignment="Center"/>
+                                        <c:Chip Grid.Column="2" Text="{Binding StatusText}" Kind="{Binding StatusKind}" HorizontalAlignment="Left"/>
+                                        <TextBlock Grid.Column="3" Text="{Binding PerfText}" Style="{StaticResource Text.Body}" FontSize="13" TextAlignment="Right" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="4" Text="{Binding UpdatedText}" Style="{StaticResource Text.Secondary}" FontSize="13" TextAlignment="Right" VerticalAlignment="Center"/>
+                                        <Button Grid.Column="5" Style="{StaticResource Button.Quiet.Small}" Width="28" Padding="0" HorizontalAlignment="Right" VerticalAlignment="Center" ToolTip="프로젝트 삭제"
+                                                Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}">
+                                            <c:Icon Glyph="Delete" FontSize="13"/>
+                                        </Button>
+                                    </Grid>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+
+                <!-- nothing yet: one small voxel drawing and the next action (design system §6) -->
+                <Border Style="{StaticResource Card.Flat}" Padding="24" Visibility="{Binding HasProjects, Converter={StaticResource VisibleWhen}, ConverterParameter=invert}">
+                    <StackPanel Orientation="Horizontal">
+                        <c:VoxelArt Voxels="0,0,0;1,0,0;0,1,0;0,0,1;1,1,0" Unit="14" VerticalAlignment="Center"/>
+                        <StackPanel Margin="20,0,0,0" VerticalAlignment="Center">
+                            <TextBlock Text="아직 프로젝트가 없습니다" Style="{StaticResource Text.Subtitle}"/>
+                            <TextBlock Text="모델 파일을 가져오거나, 모델 모음에서 골라 시작하세요." Style="{StaticResource Text.Secondary}" Margin="0,2,0,0"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- the model zoo: a start without a model file (design §5.9) -->
+                <Border Margin="0,16,0,0" CornerRadius="12" BorderBrush="{StaticResource Brush.Border.Default}" BorderThickness="1" Padding="18,16"
+                        Visibility="{Binding HasZoo, Converter={StaticResource VisibleWhen}}">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                            <GradientStop Color="#F2F5FC" Offset="0"/>
+                            <GradientStop Color="White" Offset="0.6"/>
+                        </LinearGradientBrush>
+                    </Border.Background>
+                    <DockPanel>
+                        <Border DockPanel.Dock="Left" Width="44" Height="44" CornerRadius="12" Background="{StaticResource Brush.Brand.Primary}" VerticalAlignment="Center">
+                            <c:Icon Glyph="Grid" FontSize="18" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <Button DockPanel.Dock="Right" Style="{StaticResource Button.Primary}" VerticalAlignment="Center" Command="{Binding OpenZooCommand}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="모델 모음 열기" VerticalAlignment="Center"/>
+                                <c:Icon Glyph="ArrowRight" FontSize="12" Margin="7,0,0,0"/>
+                            </StackPanel>
+                        </Button>
+                        <StackPanel Margin="16,0,16,0" VerticalAlignment="Center">
+                            <TextBlock Text="모델 모음에서 시작하기" Style="{StaticResource Text.BodyStrong}" FontSize="15"/>
+                            <TextBlock Text="YOLOv8 · ResNet 같은 유명한 모델을 골라 누르면, 앱이 받아서 ONNX로 내보내고 바로 빌드합니다." Style="{StaticResource Text.Caption}"
+                                       FontSize="13" TextWrapping="Wrap" Margin="0,2,0,0"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                <Border Background="#EEF2FF" CornerRadius="5" Padding="7,0" Height="20"><TextBlock Text="Ultralytics" FontSize="11.5" FontWeight="Medium" Foreground="#3B4A9C" VerticalAlignment="Center"/></Border>
+                                <Border Background="{StaticResource Brush.Surface.Sunken}" CornerRadius="5" Padding="7,0" Height="20" Margin="6,0,0,0"><TextBlock Text="torchvision" FontSize="11.5" FontWeight="Medium" Foreground="{StaticResource Brush.Text.Secondary}" VerticalAlignment="Center"/></Border>
+                                <Border Background="#FFF4E5" CornerRadius="5" Padding="7,0" Height="20" Margin="6,0,0,0"><TextBlock Text="timm" FontSize="11.5" FontWeight="Medium" Foreground="#9A5B00" VerticalAlignment="Center"/></Border>
+                                <TextBlock Text="{Binding ZooCounts}" Style="{StaticResource Text.Caption}" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </DockPanel>
+                </Border>
+
+                <!-- drop zone -->
+                <Grid Margin="0,16,0,0" AllowDrop="True" DragOver="OnDragOver" Drop="OnDrop" Background="Transparent">
+                    <Rectangle RadiusX="12" RadiusY="12" Fill="{StaticResource Brush.Surface.Rail}" Stroke="{StaticResource Brush.Border.Control}"
+                               StrokeThickness="1.5" StrokeDashArray="4 3" SnapsToDevicePixels="True"/>
+                    <DockPanel Margin="18" LastChildFill="False">
+                        <c:Icon DockPanel.Dock="Left" Glyph="Upload" FontSize="24" Foreground="{StaticResource Brush.Text.Secondary}"/>
+                        <StackPanel DockPanel.Dock="Left" Margin="14,0,0,0" VerticalAlignment="Center">
+                            <TextBlock Text="모델 파일을 여기에 끌어다 놓으세요" Style="{StaticResource Text.BodyStrong}"/>
+                            <TextBlock Text=".onnx · .tflite · .cfg + .weights · .enlight — 새 프로젝트가 만들어집니다" Style="{StaticResource Text.Caption}"/>
+                        </StackPanel>
+                        <Button DockPanel.Dock="Right" Style="{StaticResource Button.Secondary}" Content="파일 고르기" VerticalAlignment="Center" Command="{Binding PickModelCommand}"/>
+                    </DockPanel>
+                </Grid>
+            </StackPanel>
+
+            <!-- right: engine and first steps -->
+            <StackPanel Grid.Column="2">
+                <Border Style="{StaticResource Card}">
+                    <StackPanel>
+                        <DockPanel LastChildFill="False" Margin="0,0,0,12">
+                            <TextBlock DockPanel.Dock="Left" Text="엔진" Style="{StaticResource Text.Subtitle}"/>
+                            <c:Chip DockPanel.Dock="Right" Text="{Binding Engine.StatusText}" Kind="{Binding Engine.StatusKind}"/>
+                        </DockPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions><RowDefinition/><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
+                            <TextBlock Text="SDK" Style="{StaticResource Text.Caption}" FontSize="13" LineHeight="26"/>
+                            <TextBlock Grid.Column="1" Text="{Binding Engine.Sdk}" Style="{StaticResource Text.Body}" FontSize="13" LineHeight="26" TextAlignment="Right"/>
+                            <TextBlock Grid.Row="1" Text="보드용 빌드 도구" Style="{StaticResource Text.Caption}" FontSize="13" LineHeight="26"/>
+                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Engine.BoardTools}" Style="{StaticResource Text.Body}" FontSize="13" LineHeight="26" TextAlignment="Right"/>
+                            <TextBlock Grid.Row="2" Text="작업 공간" Style="{StaticResource Text.Caption}" FontSize="13" LineHeight="26" Margin="0,0,12,0"/>
+                            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Engine.Workspace}" Style="{StaticResource Text.Mono}" LineHeight="26" TextAlignment="Right"
+                                       ToolTip="{Binding Engine.Workspace}"/>
+                        </Grid>
+                        <TextBlock Text="{Binding Engine.Problem}" Style="{StaticResource Text.Caption}" Foreground="{StaticResource Brush.Status.Danger}" TextWrapping="Wrap" Margin="0,8,0,0"
+                                   Visibility="{Binding Engine.Problem, Converter={StaticResource VisibleWhen}}"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource Card.Flat}" Margin="0,12,0,0">
+                    <DockPanel>
+                        <c:VoxelArt DockPanel.Dock="Left" Voxels="0,0,0;1,0,0;2,0,0;1,0,1;1,0,2;0,1,0;2,1,0;1,1,3" Unit="11" VerticalAlignment="Center"/>
+                        <StackPanel Margin="16,0,0,0" VerticalAlignment="Center">
+                            <TextBlock Text="처음이신가요?" Style="{StaticResource Text.BodyStrong}"/>
+                            <TextBlock Text="모델 → 설정 → 데이터 → 빌드 순서로 따라가면 됩니다. 값은 프로그램이 채우고, 확인만 하면 됩니다." Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,2,0,0"/>
+                        </StackPanel>
+                    </DockPanel>
+                </Border>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</UserControl>

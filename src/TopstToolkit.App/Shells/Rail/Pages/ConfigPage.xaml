@@ -1,0 +1,210 @@
+<UserControl x:Class="TopstToolkit.App.Shells.Rail.Pages.ConfigPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:TopstToolkit.App.Controls">
+    <!-- Step 2 "설정" in layout A. DataContext: ConfigViewModel. -->
+    <DockPanel Margin="32,22,32,20">
+        <DockPanel DockPanel.Dock="Top" LastChildFill="False" Margin="0,0,0,16">
+            <TextBlock DockPanel.Dock="Left" Text="2 설정" Style="{StaticResource Page.Title}"/>
+            <c:Chip DockPanel.Dock="Left" Text="자동으로 채움" Kind="Info" Margin="10,0,0,0" Visibility="{Binding IsAutoFilled, Converter={StaticResource VisibleWhen}}"/>
+            <TextBlock DockPanel.Dock="Right" Text="여기 값을 바꾸면 변환부터 다시 빌드합니다" Style="{StaticResource Page.Note}"/>
+        </DockPanel>
+
+        <DockPanel DockPanel.Dock="Bottom" LastChildFill="False" Margin="0,16,0,0">
+            <Button DockPanel.Dock="Left" Style="{StaticResource Button.Secondary}" Command="{Binding BackCommand}">
+                <StackPanel Orientation="Horizontal">
+                    <c:Icon Glyph="ArrowLeft" FontSize="12" Margin="0,0,7,0"/>
+                    <TextBlock Text="1 모델" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+            <Button DockPanel.Dock="Right" Style="{StaticResource Button.Secondary}" Command="{Binding NextCommand}">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="다음: 3 데이터" VerticalAlignment="Center"/>
+                    <c:Icon Glyph="ArrowRight" FontSize="12" Margin="7,0,0,0"/>
+                </StackPanel>
+            </Button>
+        </DockPanel>
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="28"/>
+                <ColumnDefinition Width="312"/>
+            </Grid.ColumnDefinitions>
+
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False" Margin="-3,-3,-13,0" Padding="3,3,13,0">
+                <StackPanel>
+                    <!-- what the model does -->
+                    <TextBlock Text="작업 종류" Style="{StaticResource Text.Field}"/>
+                    <UniformGrid Columns="3" Margin="-6,0,-6,0">
+                        <RadioButton Style="{StaticResource Choice}" GroupName="task" IsChecked="{Binding IsClass}" Margin="6,0">
+                            <DockPanel>
+                                <c:Icon DockPanel.Dock="Left" Glyph="Tag" FontSize="18" VerticalAlignment="Top" Margin="0,2,10,0"/>
+                                <StackPanel>
+                                    <TextBlock Text="분류" Style="{StaticResource Text.BodyStrong}" LineHeight="20"/>
+                                    <TextBlock Text="사진 한 장에 이름 하나" Style="{StaticResource Text.Caption}"/>
+                                </StackPanel>
+                            </DockPanel>
+                        </RadioButton>
+                        <RadioButton Style="{StaticResource Choice}" GroupName="task" IsChecked="{Binding IsObj}" Margin="6,0">
+                            <DockPanel>
+                                <c:Icon DockPanel.Dock="Left" Glyph="Scan" FontSize="18" VerticalAlignment="Top" Margin="0,2,10,0"/>
+                                <StackPanel>
+                                    <TextBlock Text="객체 검출" Style="{StaticResource Text.BodyStrong}" LineHeight="20"/>
+                                    <TextBlock Text="물체의 위치와 종류" Style="{StaticResource Text.Caption}"/>
+                                </StackPanel>
+                            </DockPanel>
+                        </RadioButton>
+                        <RadioButton Style="{StaticResource Choice}" GroupName="task" IsChecked="{Binding IsUnknown}" Margin="6,0">
+                            <DockPanel>
+                                <c:Icon DockPanel.Dock="Left" Glyph="Grid" FontSize="18" VerticalAlignment="Top" Margin="0,2,10,0"/>
+                                <StackPanel>
+                                    <TextBlock Text="기타" Style="{StaticResource Text.BodyStrong}" LineHeight="20"/>
+                                    <TextBlock Text="출력값 그대로" Style="{StaticResource Text.Caption}"/>
+                                </StackPanel>
+                            </DockPanel>
+                        </RadioButton>
+                    </UniformGrid>
+
+                    <Grid Margin="0,16,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="16"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <!-- preset -->
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                <TextBlock Text="프리셋" Style="{StaticResource Text.Label}"/>
+                                <c:Chip Text="추천" Kind="Info" Margin="8,-1,0,-1" Visibility="{Binding IsRecommended, Converter={StaticResource VisibleWhen}}"/>
+                            </StackPanel>
+                            <ComboBox Style="{StaticResource Select}" ItemsSource="{Binding Presets}" SelectedItem="{Binding SelectedPreset}" DisplayMemberPath="Name"/>
+                            <TextBlock Text="계열에 맞는 값을 한꺼번에 채웁니다." Style="{StaticResource Text.Help}"/>
+                        </StackPanel>
+                        <!-- classes and labels -->
+                        <StackPanel Grid.Column="2" Visibility="{Binding ShowLabels, Converter={StaticResource VisibleWhen}}">
+                            <TextBlock Text="클래스와 라벨" Style="{StaticResource Text.Field}"/>
+                            <DockPanel>
+                                <TextBox DockPanel.Dock="Right" Style="{StaticResource Input.Number}" Width="72" Margin="8,0,0,0" TextAlignment="Right"
+                                         Text="{Binding NumClassText, UpdateSourceTrigger=PropertyChanged}" ToolTip="클래스 수 · 툴킷 옵션 --num-class"/>
+                                <ComboBox Style="{StaticResource Select}" ItemsSource="{Binding LabelSets}" SelectedItem="{Binding SelectedLabelSet}" DisplayMemberPath="Name"/>
+                            </DockPanel>
+                            <DockPanel Margin="0,6,0,0" LastChildFill="True">
+                                <Button DockPanel.Dock="Right" Style="{StaticResource Button.Link}" Content="라벨 파일 고르기" FontSize="12" Command="{Binding PickLabelsCommand}" Margin="8,0,0,0"
+                                        Visibility="{Binding IsCustomLabels, Converter={StaticResource VisibleWhen}}"/>
+                                <TextBlock Text="{Binding LabelHelp}" Style="{StaticResource Text.Caption}"/>
+                            </DockPanel>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- how pictures go in -->
+                    <TextBlock Text="이미지 전처리" Style="{StaticResource Text.Field}" Margin="0,16,0,6"/>
+                    <DockPanel LastChildFill="True" IsEnabled="{Binding UsesPictures}">
+                        <Border DockPanel.Dock="Left" Style="{StaticResource Seg.Frame}">
+                            <StackPanel Orientation="Horizontal">
+                                <RadioButton Style="{StaticResource Seg}" GroupName="pre" Tag="first" Content="0 ~ 1" IsChecked="{Binding IsUnit}"/>
+                                <RadioButton Style="{StaticResource Seg}" GroupName="pre" Content="ImageNet" IsChecked="{Binding IsImageNet}"/>
+                                <RadioButton Style="{StaticResource Seg}" GroupName="pre" Content="-1 ~ 1" IsChecked="{Binding IsSigned}"/>
+                                <RadioButton Style="{StaticResource Seg}" GroupName="pre" Tag="last" Content="직접 입력" IsChecked="{Binding IsCustomPre}"/>
+                            </StackPanel>
+                        </Border>
+                        <TextBlock Text="{Binding PreprocessHelp}" Style="{StaticResource Text.Caption}" Margin="12,0,0,0" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                    </DockPanel>
+                    <Grid Margin="0,10,0,0" Visibility="{Binding IsCustomPre, Converter={StaticResource VisibleWhen}}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="16"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Left" Text="mean" Style="{StaticResource Text.Caption}" Width="40" VerticalAlignment="Center"/>
+                            <TextBox Style="{StaticResource Input.Mono}" Text="{Binding MeanText, UpdateSourceTrigger=PropertyChanged}" ToolTip="툴킷 옵션 --mean (R, G, B)"/>
+                        </DockPanel>
+                        <DockPanel Grid.Column="2">
+                            <TextBlock DockPanel.Dock="Left" Text="std" Style="{StaticResource Text.Caption}" Width="32" VerticalAlignment="Center"/>
+                            <TextBox Style="{StaticResource Input.Mono}" Text="{Binding StdText, UpdateSourceTrigger=PropertyChanged}" ToolTip="툴킷 옵션 --std (R, G, B)"/>
+                        </DockPanel>
+                    </Grid>
+
+                    <!-- the file the box maths needs: the app makes it or finds it next to the model, so it is asked for only when it is missing -->
+                    <Border Style="{StaticResource Callout.Warning}" Margin="0,16,0,0" Visibility="{Binding NeedsCompanion, Converter={StaticResource VisibleWhen}}">
+                        <DockPanel>
+                            <c:Icon DockPanel.Dock="Left" Glyph="Warning" FontSize="16" Foreground="{StaticResource Brush.Status.Warning}" VerticalAlignment="Top" Margin="0,2,10,0"/>
+                            <Button DockPanel.Dock="Right" Style="{StaticResource Button.Secondary}" Content="파일 고르기" Command="{Binding PickCompanionCommand}" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                            <StackPanel>
+                                <TextBlock Text="{Binding CompanionTitle}" Style="{StaticResource Callout.Text}" FontWeight="SemiBold" Foreground="{StaticResource Brush.Text.Heading}"/>
+                                <TextBlock Text="{Binding CompanionHelp}" Style="{StaticResource Callout.Text}"/>
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+
+                    <Grid Margin="0,16,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="16"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <!-- letterbox -->
+                        <StackPanel Visibility="{Binding IsObj, Converter={StaticResource VisibleWhen}}">
+                            <TextBlock Text="비율 유지 (여백 채움)" Style="{StaticResource Text.Field}"/>
+                            <Border Height="36">
+                                <CheckBox Style="{StaticResource Toggle}" IsChecked="{Binding Letterbox}" VerticalAlignment="Center" ToolTip="툴킷 옵션 --enable-letterbox">
+                                    <TextBlock>
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource Text.Body}">
+                                                <Setter Property="Text" Value="끔"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Letterbox}" Value="True"><Setter Property="Text" Value="켬"/></DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </CheckBox>
+                            </Border>
+                            <TextBlock Text="{Binding LetterboxHelp}" Style="{StaticResource Text.Help}"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <Border Style="{StaticResource Callout.Danger}" Margin="0,16,0,0" Visibility="{Binding Error, Converter={StaticResource VisibleWhen}}">
+                        <TextBlock Text="{Binding Error}" Style="{StaticResource Callout.Text}"/>
+                    </Border>
+                    <!-- no "고급 설정" (2026-11-23): output order, DFL, the cut, the quantization range and the board's box maths
+                         are set by the preset, the import and the cut on the graph, and stay in project.json -->
+                </StackPanel>
+            </ScrollViewer>
+
+            <StackPanel Grid.Column="2">
+                <Border Style="{StaticResource Callout}" Margin="0,0,0,12">
+                    <DockPanel>
+                        <c:Icon DockPanel.Dock="Left" Glyph="Info" FontSize="16" Foreground="{StaticResource Brush.Brand.Primary}" VerticalAlignment="Top" Margin="0,2,10,0"/>
+                        <StackPanel>
+                            <TextBlock Text="{Binding GuessTitle}" Style="{StaticResource Callout.Text}" FontWeight="SemiBold" Foreground="{StaticResource Brush.Text.Heading}"/>
+                            <TextBlock Text="{Binding GuessReason}" Style="{StaticResource Callout.Text}"/>
+                        </StackPanel>
+                    </DockPanel>
+                </Border>
+                <Border Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Text="이 값이 쓰이는 단계" Style="{StaticResource Text.Subtitle}" Margin="0,0,0,8"/>
+                        <DockPanel LastChildFill="False" Margin="0,4">
+                            <c:StatusDot DockPanel.Dock="Left" State="{Binding StageDot}"/>
+                            <TextBlock DockPanel.Dock="Left" Text="변환 · 캘리브레이션" Style="{StaticResource Text.Body}" FontSize="13" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                            <c:Chip DockPanel.Dock="Right" Text="{Binding StageChipText}" Kind="{Binding StageChipKind}"/>
+                        </DockPanel>
+                        <DockPanel LastChildFill="False" Margin="0,4">
+                            <c:StatusDot DockPanel.Dock="Left" State="{Binding StageDot}"/>
+                            <TextBlock DockPanel.Dock="Left" Text="양자화 · 컴파일" Style="{StaticResource Text.Body}" FontSize="13" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                            <c:Chip DockPanel.Dock="Right" Text="{Binding StageChipText}" Kind="{Binding StageChipKind}"/>
+                        </DockPanel>
+                        <DockPanel LastChildFill="False" Margin="0,4">
+                            <c:StatusDot DockPanel.Dock="Left" State="{Binding StageDot}"/>
+                            <TextBlock DockPanel.Dock="Left" Text="PC 추론 · 성능 추정" Style="{StaticResource Text.Body}" FontSize="13" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                            <c:Chip DockPanel.Dock="Right" Text="{Binding StageChipText}" Kind="{Binding StageChipKind}"/>
+                        </DockPanel>
+                        <TextBlock Text="값을 바꾸면 이 단계들을 다시 실행합니다. 모델 분석은 그대로 다시 씁니다." Style="{StaticResource Text.Help}"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </Grid>
+    </DockPanel>
+</UserControl>

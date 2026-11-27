@@ -1,0 +1,337 @@
+<UserControl x:Class="TopstToolkit.App.Shells.Rail.Pages.ZooPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:TopstToolkit.App.Controls"
+             xmlns:vm="clr-namespace:TopstToolkit.App.ViewModels">
+    <!-- "모델 모음" in layout A (design §5.9, docs/mockups/mockup-model-zoo.html ②–④). DataContext: ZooViewModel. -->
+    <UserControl.Resources>
+        <!-- the source of a model: Ultralytics blue, timm amber, torchvision grey (as in the mockup) -->
+        <Style x:Key="Zoo.Lib" TargetType="Border">
+            <Setter Property="CornerRadius" Value="5"/>
+            <Setter Property="Padding" Value="7,0"/>
+            <Setter Property="Height" Value="20"/>
+            <Setter Property="Background" Value="{StaticResource Brush.Surface.Sunken}"/>
+            <Setter Property="TextElement.Foreground" Value="{StaticResource Brush.Text.Secondary}"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Library}" Value="ultralytics">
+                    <Setter Property="Background" Value="#EEF2FF"/>
+                    <Setter Property="TextElement.Foreground" Value="#3B4A9C"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Library}" Value="timm">
+                    <Setter Property="Background" Value="#FFF4E5"/>
+                    <Setter Property="TextElement.Foreground" Value="#9A5B00"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- one line of the preparation (as on the components screen) -->
+        <DataTemplate x:Key="Zoo.Step" DataType="{x:Type vm:InstallStepViewModel}">
+            <Border BorderBrush="{StaticResource Brush.Border.Default}" BorderThickness="0,0,0,1" Padding="0,9">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="22"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <c:StatusDot State="{Binding State}" VerticalAlignment="Top" Margin="2,5,0,0"/>
+                    <StackPanel Grid.Column="1" Margin="10,0,16,0">
+                        <TextBlock x:Name="title" Text="{Binding Title}" Style="{StaticResource Text.Body}" FontSize="13" LineHeight="20"/>
+                        <ProgressBar Style="{StaticResource Progress.Pulse}" Maximum="1" Value="{Binding Fraction, Mode=OneWay}" Margin="0,6,0,4"
+                                     Visibility="{Binding HasBar, Converter={StaticResource VisibleWhen}}"/>
+                        <TextBlock Text="{Binding Detail}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap"
+                                   Visibility="{Binding Detail, Converter={StaticResource VisibleWhen}}"/>
+                    </StackPanel>
+                    <TextBlock Grid.Column="2" Text="{Binding Right}" Style="{StaticResource Text.Caption}" VerticalAlignment="Top" Margin="0,1,0,0"/>
+                </Grid>
+            </Border>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding State}" Value="Todo">
+                    <Setter TargetName="title" Property="Foreground" Value="{StaticResource Brush.Text.Muted}"/>
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <Grid Margin="32,22,32,20">
+
+        <!-- ================= the list and the chosen model ================= -->
+        <DockPanel Visibility="{Binding IsList, Converter={StaticResource VisibleWhen}}">
+            <DockPanel DockPanel.Dock="Top" LastChildFill="False" Margin="0,0,0,14">
+                <TextBlock DockPanel.Dock="Left" Text="모델 모음" Style="{StaticResource Page.Title}"/>
+                <TextBlock DockPanel.Dock="Right" Text="{Binding Note}" Style="{StaticResource Page.Note}"/>
+            </DockPanel>
+
+            <DockPanel DockPanel.Dock="Top" LastChildFill="False" Margin="0,0,0,14">
+                <Border DockPanel.Dock="Left" Style="{StaticResource Seg.Frame}" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal">
+                        <RadioButton Style="{StaticResource Seg}" GroupName="zooTask" Tag="first" IsChecked="{Binding IsClassTab}">
+                            <TextBlock><Run Text="이미지 분류"/><Run Text=" "/><Run Text="{Binding ClassCount, Mode=OneWay}" FontWeight="SemiBold"/></TextBlock>
+                        </RadioButton>
+                        <RadioButton Style="{StaticResource Seg}" GroupName="zooTask" Tag="last" IsChecked="{Binding IsObjectTab}">
+                            <TextBlock><Run Text="객체 검출"/><Run Text=" "/><Run Text="{Binding ObjectCount, Mode=OneWay}" FontWeight="SemiBold"/></TextBlock>
+                        </RadioButton>
+                    </StackPanel>
+                </Border>
+                <Grid DockPanel.Dock="Left" Width="230" Height="34" Margin="12,0,0,0" VerticalAlignment="Center">
+                    <TextBox x:Name="search" Style="{StaticResource Input}" Text="{Binding Search, UpdateSourceTrigger=PropertyChanged}" Padding="30,0,8,0"
+                             VerticalContentAlignment="Center" AutomationProperties.Name="모델 이름으로 찾기"/>
+                    <c:Icon Glyph="Search" FontSize="13" Foreground="{StaticResource Brush.Text.Muted}" HorizontalAlignment="Left" VerticalAlignment="Center"
+                            Margin="11,0,0,0" IsHitTestVisible="False"/>
+                    <TextBlock Text="모델 이름으로 찾기" Style="{StaticResource Text.Caption}" FontSize="13" VerticalAlignment="Center" Margin="31,0,0,0" IsHitTestVisible="False"
+                               Visibility="{Binding Search, Converter={StaticResource VisibleWhen}, ConverterParameter=invert}"/>
+                </Grid>
+                <ItemsControl DockPanel.Dock="Right" ItemsSource="{Binding Filters}" Focusable="False" VerticalAlignment="Center">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type vm:ZooFilter}">
+                            <Button Margin="6,0,0,0" Cursor="Hand" Command="{Binding DataContext.ChooseLibraryCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    CommandParameter="{Binding}">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="chip" Height="28" CornerRadius="14" Padding="10,0" BorderThickness="1" Background="White"
+                                                BorderBrush="{StaticResource Brush.Border.Default}">
+                                            <ContentPresenter VerticalAlignment="Center"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <DataTrigger Binding="{Binding IsChecked}" Value="True">
+                                                <Setter TargetName="chip" Property="Background" Value="{StaticResource Brush.Brand.PrimaryTint}"/>
+                                                <Setter TargetName="chip" Property="BorderBrush" Value="#C9D3EA"/>
+                                            </DataTrigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                                <TextBlock x:Name="label" FontSize="12" FontWeight="Medium" Foreground="{StaticResource Brush.Text.Secondary}">
+                                    <Run Text="{Binding Label, Mode=OneWay}"/><Run Text=" "/><Run Text="{Binding Count, Mode=OneWay}" FontWeight="SemiBold"/>
+                                </TextBlock>
+                            </Button>
+                            <DataTemplate.Triggers>
+                                <DataTrigger Binding="{Binding IsChecked}" Value="True">
+                                    <Setter TargetName="label" Property="Foreground" Value="{StaticResource Brush.Brand.Primary}"/>
+                                </DataTrigger>
+                            </DataTemplate.Triggers>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </DockPanel>
+
+            <Border DockPanel.Dock="Top" Style="{StaticResource Callout.Danger}" Margin="0,0,0,12" Visibility="{Binding HasProblem, Converter={StaticResource VisibleWhen}}">
+                <TextBlock Text="{Binding Problem}" Style="{StaticResource Callout.Text}"/>
+            </Border>
+            <Border DockPanel.Dock="Top" Style="{StaticResource Callout.Warning}" Margin="0,0,0,12" Visibility="{Binding Notice, Converter={StaticResource VisibleWhen}}">
+                <TextBlock Text="{Binding Notice}" Style="{StaticResource Callout.Text}"/>
+            </Border>
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="28"/>
+                    <ColumnDefinition Width="312"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- the list -->
+                <Border BorderBrush="{StaticResource Brush.Border.Default}" BorderThickness="1" CornerRadius="12" Background="White" ClipToBounds="True">
+                    <DockPanel>
+                        <Border DockPanel.Dock="Top" Background="{StaticResource Brush.Surface.TableHead}" CornerRadius="11,11,0,0" Height="36" Padding="16,0">
+                            <Grid VerticalAlignment="Center">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/><ColumnDefinition Width="52"/><ColumnDefinition Width="96"/><ColumnDefinition Width="132"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="모델" Style="{StaticResource Table.Head}"/>
+                                <TextBlock Grid.Column="1" Text="입력" Style="{StaticResource Table.Head}" TextAlignment="Right"/>
+                                <TextBlock Grid.Column="2" Text="파라미터" Style="{StaticResource Table.Head}" TextAlignment="Right"/>
+                                <TextBlock Grid.Column="3" Text="보드 시간 (추정)" Style="{StaticResource Table.Head}" TextAlignment="Right"/>
+                            </Grid>
+                        </Border>
+                        <Border DockPanel.Dock="Bottom" BorderBrush="{StaticResource Brush.Border.Default}" BorderThickness="0,1,0,0" Padding="16,10">
+                            <DockPanel>
+                                <c:Icon DockPanel.Dock="Left" Glyph="Info" FontSize="14" Foreground="{StaticResource Brush.Text.Muted}" VerticalAlignment="Top" Margin="0,2,8,0"/>
+                                <TextBlock Text="{Binding Foot}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap"/>
+                            </DockPanel>
+                        </Border>
+                        <Grid>
+                            <TextBlock Text="찾는 이름의 모델이 없어요." Style="{StaticResource Text.Secondary}" Margin="16,14" Visibility="{Binding HasNothing, Converter={StaticResource VisibleWhen}}"/>
+                            <ScrollViewer x:Name="rows" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
+                                <ItemsControl x:Name="list" ItemsSource="{Binding Visible}" Focusable="False">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type vm:ZooRowViewModel}">
+                                            <Button Cursor="Hand" Command="{Binding DataContext.SelectCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"
+                                                    AutomationProperties.Name="{Binding Display}">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Grid>
+                                                            <Border x:Name="row" Background="Transparent" BorderBrush="{StaticResource Brush.Border.Default}" BorderThickness="0,0,0,1" Padding="16,0" MinHeight="48">
+                                                                <ContentPresenter VerticalAlignment="Center"/>
+                                                            </Border>
+                                                            <Border x:Name="mark" Width="3" HorizontalAlignment="Left" Background="{StaticResource Brush.Brand.Primary}" Visibility="Collapsed"/>
+                                                        </Grid>
+                                                        <ControlTemplate.Triggers>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter TargetName="row" Property="Background" Value="{StaticResource Brush.Surface.Rail}"/>
+                                                            </Trigger>
+                                                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                                <Setter TargetName="row" Property="Background" Value="#F3F6FC"/>
+                                                                <Setter TargetName="mark" Property="Visibility" Value="Visible"/>
+                                                            </DataTrigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                                <Grid Margin="0,7">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/><ColumnDefinition Width="52"/><ColumnDefinition Width="96"/><ColumnDefinition Width="132"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel Margin="0,0,12,0">
+                                                        <TextBlock Text="{Binding Display}" Style="{StaticResource Text.BodyStrong}" FontSize="13" LineHeight="19" TextTrimming="CharacterEllipsis"/>
+                                                        <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                                            <Border Style="{StaticResource Zoo.Lib}">
+                                                                <TextBlock Text="{Binding LibraryName}" FontSize="11.5" FontWeight="Medium" VerticalAlignment="Center"/>
+                                                            </Border>
+                                                            <TextBlock Text="{Binding SubText}" Style="{StaticResource Text.Caption}" FontSize="12" Margin="6,0,0,0" VerticalAlignment="Center"
+                                                                       TextTrimming="CharacterEllipsis"/>
+                                                        </StackPanel>
+                                                    </StackPanel>
+                                                    <TextBlock Grid.Column="1" Text="{Binding SizeText}" Style="{StaticResource Text.Body}" FontSize="13" TextAlignment="Right" VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="2" Text="{Binding ParamsText}" Style="{StaticResource Text.Body}" FontSize="13" TextAlignment="Right" VerticalAlignment="Center"/>
+                                                    <StackPanel Grid.Column="3" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                                        <Border Width="{Binding BarWidth}" Height="6" CornerRadius="3" Opacity="0.7" VerticalAlignment="Center" Margin="0,0,8,0">
+                                                            <Border.Background>
+                                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                                                    <GradientStop Color="#72E7AD" Offset="0"/>
+                                                                    <GradientStop Color="#3D8AED" Offset="1"/>
+                                                                </LinearGradientBrush>
+                                                            </Border.Background>
+                                                        </Border>
+                                                        <TextBlock Text="{Binding MsText}" Style="{StaticResource Text.Body}" FontSize="13" VerticalAlignment="Center"/>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </Grid>
+                    </DockPanel>
+                </Border>
+
+                <!-- the chosen model (scrolls when the window is short, so its buttons stay reachable) -->
+                <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False" Margin="-3,-3,-13,0" Padding="3,3,13,0">
+                <Border Style="{StaticResource Card}" VerticalAlignment="Top" Visibility="{Binding HasSelection, Converter={StaticResource VisibleWhen}}">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{Binding Title}" Style="{StaticResource Text.Title}" FontSize="18" VerticalAlignment="Center"/>
+                            <c:Chip Text="{Binding TaskText}" Kind="Info" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <TextBlock Text="{Binding About}" Style="{StaticResource Text.Secondary}" FontSize="13" LineHeight="20" TextWrapping="Wrap" Margin="0,6,0,8"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions><RowDefinition/><RowDefinition/><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
+                            <TextBlock Text="보드 시간" Style="{StaticResource Text.Caption}" FontSize="12.5" LineHeight="22" Margin="0,0,12,0"/>
+                            <TextBlock Grid.Column="1" Text="{Binding MsText}" Style="{StaticResource Text.Body}" FontSize="12.5" LineHeight="22" TextAlignment="Right"/>
+                            <TextBlock Grid.Row="1" Text="입력" Style="{StaticResource Text.Caption}" FontSize="12.5" LineHeight="22"/>
+                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding InputText}" Style="{StaticResource Text.Body}" FontSize="12.5" LineHeight="22" TextAlignment="Right"/>
+                            <TextBlock Grid.Row="2" Text="가중치" Style="{StaticResource Text.Caption}" FontSize="12.5" LineHeight="22"/>
+                            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding WeightsText}" Style="{StaticResource Text.Body}" FontSize="12.5" LineHeight="22" TextAlignment="Right"
+                                       TextTrimming="CharacterEllipsis" ToolTip="{Binding WeightsText}"/>
+                            <TextBlock Grid.Row="3" Text="라이선스" Style="{StaticResource Text.Caption}" FontSize="12.5" LineHeight="22"/>
+                            <TextBlock Grid.Row="3" Grid.Column="1" Style="{StaticResource Text.Body}" FontSize="12.5" LineHeight="22" TextAlignment="Right">
+                                <Hyperlink Command="{Binding OpenLicenseCommand}" Foreground="{StaticResource Brush.Brand.Primary}">라이선스 확인</Hyperlink>
+                            </TextBlock>
+                        </Grid>
+                        <!-- a big model: the build needs a lot of the PC's memory -->
+                        <TextBlock Text="{Binding MemoryText}" Style="{StaticResource Text.Help}" Foreground="{StaticResource Brush.Status.Warning}" TextWrapping="Wrap" Margin="0,6,0,0"
+                                   Visibility="{Binding HasMemoryText, Converter={StaticResource VisibleWhen}}"/>
+                        <TextBlock Text="누르면" Style="{StaticResource Text.Caption}" Margin="0,10,0,5"/>
+                        <ItemsControl ItemsSource="{Binding FlowSteps}" Focusable="False">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type vm:ZooFlowStep}">
+                                    <DockPanel Margin="0,0,0,4">
+                                        <Border DockPanel.Dock="Left" Width="18" Height="18" CornerRadius="9" Background="{StaticResource Brush.Surface.Sunken}" Margin="0,1,8,0" VerticalAlignment="Top">
+                                            <TextBlock Text="{Binding Number}" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource Brush.Text.Secondary}"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <TextBlock Text="{Binding Text}" Style="{StaticResource Text.Body}" FontSize="12.5" LineHeight="19" TextWrapping="Wrap"/>
+                                    </DockPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Border Background="#F7F9FD" BorderBrush="#D9DFF0" BorderThickness="1" CornerRadius="10" Padding="14,10" Margin="0,10,0,0"
+                                Visibility="{Binding NeedsConsent, Converter={StaticResource VisibleWhen}}">
+                            <StackPanel>
+                                <TextBlock Text="{Binding NeedTitle}" Style="{StaticResource Text.BodyStrong}" FontSize="12.5"/>
+                                <TextBlock Text="{Binding NeedNote}" Style="{StaticResource Text.Caption}" FontSize="12" Margin="0,1,0,0"/>
+                                <CheckBox Style="{StaticResource Check}" IsChecked="{Binding Agreed}" Margin="0,8,0,0" VerticalContentAlignment="Top" AutomationProperties.Name="라이선스에 동의">
+                                    <TextBlock TextWrapping="Wrap" Style="{StaticResource Text.Body}" FontSize="12.5" LineHeight="19">
+                                        <Run Text="{Binding ConsentLead, Mode=OneWay}"/><Hyperlink Command="{Binding OpenLicenseCommand}" Foreground="{StaticResource Brush.Brand.Primary}">라이선스</Hyperlink><Run Text="를 확인했고 동의합니다."/>
+                                    </TextBlock>
+                                </CheckBox>
+                            </StackPanel>
+                        </Border>
+                        <Button Style="{StaticResource Button.Primary}" Height="44" FontSize="15" Margin="0,12,0,0" Content="만들고 바로 빌드" Command="{Binding CreateAndBuildCommand}"/>
+                        <Button Style="{StaticResource Button.Secondary}" Height="36" Margin="0,8,0,0" Content="프로젝트만 만들기" Command="{Binding CreateOnlyCommand}"/>
+                    </StackPanel>
+                </Border>
+                </ScrollViewer>
+            </Grid>
+        </DockPanel>
+
+        <!-- ================= preparing: component, weights, export, check, project ================= -->
+        <DockPanel Visibility="{Binding IsList, Converter={StaticResource VisibleWhen}, ConverterParameter=invert}">
+            <DockPanel DockPanel.Dock="Top" LastChildFill="False" Margin="0,0,0,16">
+                <TextBlock DockPanel.Dock="Left" Text="{Binding PrepareTitle}" Style="{StaticResource Page.Title}"/>
+                <c:Chip DockPanel.Dock="Left" Text="준비 중" Kind="Running" Margin="12,0,0,0" VerticalAlignment="Center" Visibility="{Binding IsPreparing, Converter={StaticResource VisibleWhen}}"/>
+                <c:Chip DockPanel.Dock="Left" Text="멈춤" Kind="Bad" Margin="12,0,0,0" VerticalAlignment="Center" Visibility="{Binding IsFailed, Converter={StaticResource VisibleWhen}}"/>
+                <TextBlock DockPanel.Dock="Right" Style="{StaticResource Page.Note}"><Run Text="지난 시간 "/><Run Text="{Binding ElapsedText, Mode=OneWay}"/></TextBlock>
+            </DockPanel>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="28"/>
+                    <ColumnDefinition Width="312"/>
+                </Grid.ColumnDefinitions>
+                <Border Style="{StaticResource Card}" VerticalAlignment="Top">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                            <TextBlock Text="{Binding Title}" Style="{StaticResource Text.Subtitle}" VerticalAlignment="Center"/>
+                            <Border Style="{StaticResource Zoo.Lib}" DataContext="{Binding Selected}" Margin="8,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding LibraryName}" FontSize="11.5" FontWeight="Medium" VerticalAlignment="Center"/>
+                            </Border>
+                        </StackPanel>
+                        <ItemsControl ItemsSource="{Binding Steps}" ItemTemplate="{StaticResource Zoo.Step}" Focusable="False"/>
+                    </StackPanel>
+                </Border>
+                <StackPanel Grid.Column="2">
+                    <Border Style="{StaticResource Card}" Visibility="{Binding IsPreparing, Converter={StaticResource VisibleWhen}}">
+                        <StackPanel>
+                            <TextBlock Text="전체" Style="{StaticResource Text.Caption}"/>
+                            <TextBlock Text="{Binding OverallText}" Style="{StaticResource Text.Display}" Margin="0,4,0,8"/>
+                            <ProgressBar Style="{StaticResource Progress.Pulse}" Maximum="1" Value="{Binding Overall, Mode=OneWay}" Margin="0,0,0,12"/>
+                            <Button Style="{StaticResource Button.Secondary}" Command="{Binding CancelCommand}">
+                                <StackPanel Orientation="Horizontal">
+                                    <c:Icon Glyph="Stop" FontSize="12"/>
+                                    <TextBlock Text="취소" Margin="7,0,0,0" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Callout.Danger}" Visibility="{Binding IsFailed, Converter={StaticResource VisibleWhen}}">
+                        <StackPanel>
+                            <TextBlock Text="{Binding FailTitle}" Style="{StaticResource Text.BodyStrong}" TextWrapping="Wrap"/>
+                            <TextBlock Text="{Binding FailDetail}" Style="{StaticResource Callout.Text}" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                            <TextBlock Text="{Binding FailEvidence}" Style="{StaticResource Text.Mono}" FontSize="11.5" TextWrapping="Wrap" Margin="0,6,0,0"
+                                       Visibility="{Binding FailEvidence, Converter={StaticResource VisibleWhen}}"/>
+                        </StackPanel>
+                    </Border>
+                    <StackPanel Visibility="{Binding IsFailed, Converter={StaticResource VisibleWhen}}" Margin="0,12,0,0">
+                        <Button Style="{StaticResource Button.Primary}" Content="목록으로" Command="{Binding BackCommand}"/>
+                        <Button Style="{StaticResource Button.Secondary}" Content="기록 열기" Margin="0,8,0,0" Command="{Binding OpenLogsCommand}"/>
+                    </StackPanel>
+                    <Border Style="{StaticResource Callout}" Margin="0,12,0,0">
+                        <TextBlock Style="{StaticResource Callout.Text}"
+                                   Text="가중치는 공식 출처에서 받아 목록의 해시와 같은지 확인한 뒤에 씁니다. 받은 파일은 설정 › 구성 요소의 &quot;받아 둔 파일&quot;에 남아 다시 받지 않아요."/>
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </DockPanel>
+    </Grid>
+</UserControl>

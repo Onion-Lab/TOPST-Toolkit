@@ -1,0 +1,319 @@
+<UserControl x:Class="TopstToolkit.App.Shells.Rail.Pages.GraphPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:TopstToolkit.App.Controls"
+             xmlns:vm="clr-namespace:TopstToolkit.App.ViewModels"
+             Background="Transparent">
+    <!-- "자를 곳" of step 1 in layout A (docs/mockups/mockup-check-cut.html, screens 2, 4 and 5). DataContext: GraphCutViewModel. -->
+    <UserControl.Resources>
+        <!-- a row of the side lists that can be clicked -->
+        <Style x:Key="Row.Button" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Padding" Value="6,2"/>
+            <Setter Property="Margin" Value="-6,0"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{StaticResource Focus.Ring}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="b" Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="b" Property="Background" Value="{StaticResource Brush.Surface.Rail}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- an operator the NPU cannot run. DataContext: vm:GraphBadRow -->
+        <DataTemplate x:Key="Graph.Bad" DataType="{x:Type vm:GraphBadRow}">
+            <Button x:Name="row" Style="{StaticResource Row.Button}" ToolTip="{Binding Tip}"
+                    Command="{Binding DataContext.FocusCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}">
+                <DockPanel LastChildFill="True">
+                    <Ellipse x:Name="dot" DockPanel.Dock="Left" Width="8" Height="8" Margin="0,0,8,0" VerticalAlignment="Center"
+                             Fill="White" Stroke="{StaticResource Brush.Status.Danger}" StrokeThickness="1.5"/>
+                    <TextBlock x:Name="state" DockPanel.Dock="Right" Text="{Binding StateText}" FontFamily="{StaticResource Font.Ui}" FontSize="11.5"
+                               Foreground="{StaticResource Brush.Status.Success}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                    <TextBlock DockPanel.Dock="Left" Text="{Binding Op}" FontFamily="{StaticResource Font.Mono}" FontSize="12.5" Foreground="{StaticResource Brush.Status.Danger}"
+                               VerticalAlignment="Center" Margin="0,0,8,0" MaxWidth="118" TextTrimming="CharacterEllipsis"/>
+                    <TextBlock Text="{Binding Brief}" Style="{StaticResource Text.Secondary}" FontSize="12.5" LineHeight="20" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                </DockPanel>
+            </Button>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding IsLeft}" Value="True">
+                    <Setter TargetName="dot" Property="Fill" Value="{StaticResource Brush.Status.Danger}"/>
+                    <Setter TargetName="state" Property="Foreground" Value="{StaticResource Brush.Status.Danger}"/>
+                    <Setter TargetName="state" Property="FontWeight" Value="SemiBold"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsPicked}" Value="True">
+                    <Setter TargetName="row" Property="Background" Value="{StaticResource Brush.Status.DangerBg}"/>
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
+        <!-- a chosen cut. DataContext: vm:GraphCutRow -->
+        <DataTemplate x:Key="Graph.Cut" DataType="{x:Type vm:GraphCutRow}">
+            <DockPanel LastChildFill="True" ToolTip="{Binding Tip}" Background="Transparent">
+                <Button DockPanel.Dock="Right" Style="{StaticResource Row.Button}" Padding="5,1" Margin="4,0,-6,0" ToolTip="이 자르는 곳을 취소합니다"
+                        AutomationProperties.Name="자르는 곳 취소"
+                        Command="{Binding DataContext.RemoveCutCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}">
+                    <c:Icon Glyph="Cancel" FontSize="9" Foreground="{StaticResource Brush.Text.Muted}"/>
+                </Button>
+                <Button Style="{StaticResource Row.Button}"
+                        Command="{Binding DataContext.FocusCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}">
+                    <DockPanel LastChildFill="True">
+                        <Rectangle DockPanel.Dock="Left" Width="8" Height="8" RadiusX="2" RadiusY="2" Fill="{StaticResource Brush.Brand.Primary}" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                        <TextBlock DockPanel.Dock="Left" Text="{Binding Op}" Style="{StaticResource Text.BodyStrong}" FontSize="12.5" LineHeight="20" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                        <TextBlock DockPanel.Dock="Right" Text="{Binding ShortName}" FontFamily="{StaticResource Font.Mono}" FontSize="11.5" Foreground="{StaticResource Brush.Text.Muted}"
+                                   VerticalAlignment="Center" Margin="8,0,0,0" MaxWidth="110" TextTrimming="CharacterEllipsis"/>
+                        <TextBlock Text="{Binding Detail}" Style="{StaticResource Text.Secondary}" FontSize="12.5" LineHeight="20" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                    </DockPanel>
+                </Button>
+            </DockPanel>
+        </DataTemplate>
+
+        <!-- the verdict takes the tone of what it says -->
+        <Style x:Key="Verdict.Box" TargetType="Border" BasedOn="{StaticResource Callout}">
+            <Setter Property="Padding" Value="12,10"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding VerdictKind}" Value="Ok">
+                    <Setter Property="Background" Value="{StaticResource Brush.Status.SuccessBg}"/>
+                    <Setter Property="BorderBrush" Value="{StaticResource Brush.Status.Success}"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding VerdictKind}" Value="Warn">
+                    <Setter Property="Background" Value="{StaticResource Brush.Status.WarningBg}"/>
+                    <Setter Property="BorderBrush" Value="{StaticResource Brush.Status.WarningDot}"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding VerdictKind}" Value="Bad">
+                    <Setter Property="Background" Value="{StaticResource Brush.Status.DangerBg}"/>
+                    <Setter Property="BorderBrush" Value="{StaticResource Brush.Status.Danger}"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="Stat.Value" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource Font.Ui}"/>
+            <Setter Property="FontSize" Value="17"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="LineHeight" Value="24"/>
+            <Setter Property="LineStackingStrategy" Value="BlockLineHeight"/>
+            <Setter Property="Foreground" Value="{StaticResource Brush.Text.Heading}"/>
+        </Style>
+
+        <!-- the faint dot pattern behind the graph -->
+        <DrawingBrush x:Key="Graph.Dots" TileMode="Tile" Viewport="0,0,16,16" ViewportUnits="Absolute" Stretch="None" AlignmentX="Left" AlignmentY="Top">
+            <DrawingBrush.Drawing>
+                <DrawingGroup>
+                    <GeometryDrawing Brush="White">
+                        <GeometryDrawing.Geometry><RectangleGeometry Rect="0,0,16,16"/></GeometryDrawing.Geometry>
+                    </GeometryDrawing>
+                    <GeometryDrawing Brush="#E9EBEF">
+                        <GeometryDrawing.Geometry><EllipseGeometry Center="8,8" RadiusX="1" RadiusY="1"/></GeometryDrawing.Geometry>
+                    </GeometryDrawing>
+                </DrawingGroup>
+            </DrawingBrush.Drawing>
+        </DrawingBrush>
+
+        <Style x:Key="Legend.Swatch" TargetType="Border">
+            <Setter Property="Width" Value="14"/>
+            <Setter Property="Height" Value="10"/>
+            <Setter Property="CornerRadius" Value="3"/>
+            <Setter Property="BorderThickness" Value="1.5"/>
+            <Setter Property="Margin" Value="0,0,5,0"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+    </UserControl.Resources>
+
+    <DockPanel Margin="32,22,32,20">
+        <DockPanel DockPanel.Dock="Top" LastChildFill="False" Margin="0,0,0,14">
+            <Button DockPanel.Dock="Left" Style="{StaticResource Button.Quiet.Small}" Command="{Binding BackCommand}" Margin="-8,0,6,0" VerticalAlignment="Center">
+                <StackPanel Orientation="Horizontal">
+                    <c:Icon Glyph="ArrowLeft" FontSize="11" Margin="0,0,6,0"/>
+                    <TextBlock Text="1 모델" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+            <TextBlock DockPanel.Dock="Left" Text="자를 곳" Style="{StaticResource Page.Title}"/>
+            <c:Chip DockPanel.Dock="Left" Text="{Binding ChipText}" Kind="{Binding ChipKind}" Margin="10,0,0,0"
+                    Visibility="{Binding ChipText, Converter={StaticResource VisibleWhen}}"/>
+            <Button DockPanel.Dock="Right" Style="{StaticResource Button.Primary}" Command="{Binding ApplyCommand}" VerticalAlignment="Center" Margin="12,0,0,0"
+                    Visibility="{Binding Locked, Converter={StaticResource VisibleWhen}, ConverterParameter=invert}">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="이대로 사용" VerticalAlignment="Center"/>
+                    <c:Icon Glyph="ArrowRight" FontSize="12" Margin="7,0,0,0"/>
+                </StackPanel>
+            </Button>
+            <Button DockPanel.Dock="Right" Style="{StaticResource Button.Primary}" Command="{Binding OtherModelCommand}" VerticalAlignment="Center" Margin="12,0,0,0"
+                    Visibility="{Binding Locked, Converter={StaticResource VisibleWhen}}">
+                <StackPanel Orientation="Horizontal">
+                    <c:Icon Glyph="Upload" FontSize="13" Margin="0,0,7,0"/>
+                    <TextBlock Text="다른 모델 가져오기" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+            <TextBlock DockPanel.Dock="Right" Text="{Binding Hint}" Style="{StaticResource Page.Note}"/>
+        </DockPanel>
+
+        <!-- a model no cut helps -->
+        <Border DockPanel.Dock="Top" Style="{StaticResource Callout.Danger}" Margin="0,0,0,14" Visibility="{Binding BannerTitle, Converter={StaticResource VisibleWhen}}">
+            <DockPanel>
+                <c:Icon DockPanel.Dock="Left" Glyph="Warning" FontSize="16" Foreground="{StaticResource Brush.Status.Danger}" VerticalAlignment="Top" Margin="0,2,10,0"/>
+                <TextBlock Style="{StaticResource Callout.Text}">
+                    <Run Text="{Binding BannerTitle, Mode=OneWay}" FontWeight="SemiBold" Foreground="{StaticResource Brush.Text.Heading}"/>
+                    <Run Text="{Binding BannerText, Mode=OneWay}"/>
+                </TextBlock>
+            </DockPanel>
+        </Border>
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="26"/>
+                <ColumnDefinition Width="14"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="14"/>
+                <ColumnDefinition Width="312"/>
+            </Grid.ColumnDefinitions>
+
+            <c:GraphMinimap x:Name="Map" Layout="{Binding Layout}" CutEffect="{Binding Effect}" Cursor="Hand" ToolTip="전체 그래프 · 누르면 그 위치로 갑니다"
+                            Visibility="{Binding HasGraph, Converter={StaticResource VisibleWhen}}"/>
+
+            <DockPanel Grid.Column="2">
+                <!-- what the colours mean -->
+                <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,8,0,0" Visibility="{Binding HasGraph, Converter={StaticResource VisibleWhen}}">
+                    <Border Style="{StaticResource Legend.Swatch}" Background="White" BorderBrush="#C4C8CF"/>
+                    <TextBlock Text="NPU가 실행" Style="{StaticResource Text.Caption}" Foreground="{StaticResource Brush.Text.Secondary}" Margin="0,0,14,0"/>
+                    <Border Style="{StaticResource Legend.Swatch}" Background="{StaticResource Brush.Status.DangerBg}" BorderBrush="{StaticResource Brush.Status.Danger}"/>
+                    <TextBlock Text="실행 못 함" Style="{StaticResource Text.Caption}" Foreground="{StaticResource Brush.Text.Secondary}" Margin="0,0,14,0"/>
+                    <Border Style="{StaticResource Legend.Swatch}" Background="{StaticResource Brush.Status.WarningBg}" BorderBrush="{StaticResource Brush.Status.WarningDot}"/>
+                    <TextBlock Text="앞이 막혀 실행 못 함" Style="{StaticResource Text.Caption}" Foreground="{StaticResource Brush.Text.Secondary}" Margin="0,0,14,0"/>
+                    <StackPanel Orientation="Horizontal" Visibility="{Binding Locked, Converter={StaticResource VisibleWhen}, ConverterParameter=invert}">
+                        <Border Style="{StaticResource Legend.Swatch}" Background="{StaticResource Brush.Brand.PrimaryTint}" BorderBrush="{StaticResource Brush.Brand.Primary}"/>
+                        <TextBlock Text="자르는 곳 (새 출력)" Style="{StaticResource Text.Caption}" Foreground="{StaticResource Brush.Text.Secondary}" Margin="0,0,14,0"/>
+                        <Border Style="{StaticResource Legend.Swatch}" Background="#F1F2F4" BorderBrush="#B9BFC9"/>
+                        <TextBlock Text="잘라낸 구간" Style="{StaticResource Text.Caption}" Foreground="{StaticResource Brush.Text.Secondary}"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <Border BorderBrush="{StaticResource Brush.Border.Default}" BorderThickness="1" CornerRadius="12" Background="White" ClipToBounds="True">
+                    <Grid>
+                        <ScrollViewer x:Name="Scroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Focusable="False"
+                                      Background="{StaticResource Graph.Dots}" Visibility="{Binding HasGraph, Converter={StaticResource VisibleWhen}}">
+                            <c:GraphView x:Name="Graph" HorizontalAlignment="Center" VerticalAlignment="Top"
+                                         Layout="{Binding Layout}" CutEffect="{Binding Effect}" Picked="{Binding Picked}" Locked="{Binding Locked}"
+                                         ZoneTitle="{Binding ZoneTitle}" ZoneBody="{Binding ZoneBody}" ZoneKind="{Binding ZoneKind}"
+                                         PopTitle="{Binding PopTitle}" PopName="{Binding PopName}" PopBody="{Binding PopBody}" PopKind="{Binding PopKind}"
+                                         NodeCommand="{Binding NodeClickedCommand}" BackgroundCommand="{Binding ClearPickCommand}"/>
+                        </ScrollViewer>
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="420"
+                                    Visibility="{Binding HasGraph, Converter={StaticResource VisibleWhen}, ConverterParameter=invert}">
+                            <TextBlock Text="그래프를 그리는 중입니다…" Style="{StaticResource Text.Secondary}" HorizontalAlignment="Center"
+                                       Visibility="{Binding IsLoading, Converter={StaticResource VisibleWhen}}"/>
+                            <TextBlock Text="{Binding Message}" Style="{StaticResource Text.Secondary}" TextWrapping="Wrap" TextAlignment="Center"
+                                       Visibility="{Binding Message, Converter={StaticResource VisibleWhen}}"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </DockPanel>
+
+            <ScrollViewer Grid.Column="4" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False" Margin="0,0,-13,0" Padding="0,0,13,0"
+                          Visibility="{Binding HasGraph, Converter={StaticResource VisibleWhen}}">
+                <StackPanel>
+                    <!-- the three numbers -->
+                    <Border Style="{StaticResource Card}" Padding="16,11">
+                        <UniformGrid Rows="1">
+                            <StackPanel>
+                                <TextBlock Text="전체 연산" Style="{StaticResource Text.Caption}"/>
+                                <TextBlock Text="{Binding TotalText}" Style="{StaticResource Stat.Value}"/>
+                            </StackPanel>
+                            <Border BorderBrush="{StaticResource Brush.Border.Default}" BorderThickness="1,0,0,0" Padding="12,0,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="{Binding KeptLabel}" Style="{StaticResource Text.Caption}"/>
+                                    <TextBlock Text="{Binding KeptText}">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource Stat.Value}">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding KeptKind}" Value="Ok"><Setter Property="Foreground" Value="{StaticResource Brush.Status.Success}"/></DataTrigger>
+                                                    <DataTrigger Binding="{Binding KeptKind}" Value="Bad"><Setter Property="Foreground" Value="{StaticResource Brush.Status.Danger}"/></DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </StackPanel>
+                            </Border>
+                            <Border BorderBrush="{StaticResource Brush.Border.Default}" BorderThickness="1,0,0,0" Padding="12,0,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="{Binding AwayLabel}" Style="{StaticResource Text.Caption}"/>
+                                    <TextBlock Text="{Binding AwayText}">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource Stat.Value}">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding AwayKind}" Value="Warn"><Setter Property="Foreground" Value="{StaticResource Brush.Status.Warning}"/></DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </StackPanel>
+                            </Border>
+                        </UniformGrid>
+                    </Border>
+
+                    <!-- operators that cannot run -->
+                    <Border Style="{StaticResource Card}" Padding="16,11" Margin="0,10,0,0" Visibility="{Binding HasBads, Converter={StaticResource VisibleWhen}}">
+                        <StackPanel>
+                            <DockPanel LastChildFill="False" MinHeight="28" Margin="0,0,0,4">
+                                <TextBlock DockPanel.Dock="Left" Text="실행 못 하는 연산" Style="{StaticResource Text.BodyStrong}" VerticalAlignment="Center"/>
+                                <TextBlock DockPanel.Dock="Left" Text="{Binding BadCountText}" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="6,0,0,0"/>
+                                <c:Chip DockPanel.Dock="Right" Text="{Binding BadChipText}" Kind="{Binding BadChipKind}" VerticalAlignment="Center"/>
+                            </DockPanel>
+                            <ItemsControl ItemsSource="{Binding Bads}" ItemTemplate="{StaticResource Graph.Bad}" Focusable="False"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- the cuts -->
+                    <Border Style="{StaticResource Card}" Padding="16,11" Margin="0,10,0,0" Visibility="{Binding Locked, Converter={StaticResource VisibleWhen}, ConverterParameter=invert}">
+                        <StackPanel>
+                            <DockPanel LastChildFill="False" MinHeight="28" Margin="0,0,0,4">
+                                <TextBlock DockPanel.Dock="Left" Text="자르는 곳" Style="{StaticResource Text.BodyStrong}" VerticalAlignment="Center"/>
+                                <TextBlock DockPanel.Dock="Left" Text="{Binding CutCountText}" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="6,0,0,0"/>
+                                <Button DockPanel.Dock="Right" Style="{StaticResource Button.Secondary.Small}" Content="{Binding SuggestText}" Command="{Binding SuggestCommand}" VerticalAlignment="Center"/>
+                            </DockPanel>
+                            <ItemsControl ItemsSource="{Binding Cuts}" ItemTemplate="{StaticResource Graph.Cut}" Focusable="False"/>
+                            <TextBlock Text="아직 고르지 않았어요. 그래프에서 연산을 누르세요." Style="{StaticResource Text.Caption}" FontSize="12.5" TextWrapping="Wrap"
+                                       Visibility="{Binding HasCuts, Converter={StaticResource VisibleWhen}, ConverterParameter=invert}"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- why no cut helps -->
+                    <Border Style="{StaticResource Card}" Padding="16,11" Margin="0,10,0,0" Visibility="{Binding Locked, Converter={StaticResource VisibleWhen}}">
+                        <StackPanel>
+                            <TextBlock Text="왜 자를 수 없나요" Style="{StaticResource Text.BodyStrong}" Margin="0,3,0,6"/>
+                            <ItemsControl ItemsSource="{Binding WhyNot}" Focusable="False">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <DockPanel Margin="0,2">
+                                            <Ellipse DockPanel.Dock="Left" Width="4" Height="4" Fill="{StaticResource Brush.Text.Secondary}" VerticalAlignment="Top" Margin="2,8,8,0"/>
+                                            <TextBlock Text="{Binding}" Style="{StaticResource Text.Body}" FontSize="12.5" LineHeight="19" TextWrapping="Wrap"/>
+                                        </DockPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- what the cut means -->
+                    <Border Style="{StaticResource Verdict.Box}" Margin="0,10,0,0" Visibility="{Binding HasVerdict, Converter={StaticResource VisibleWhen}}">
+                        <StackPanel>
+                            <TextBlock Text="{Binding VerdictTitle}" Style="{StaticResource Text.BodyStrong}" FontSize="13.5" LineHeight="20"/>
+                            <TextBlock Text="{Binding VerdictBody}" Style="{StaticResource Text.Body}" FontSize="12.5" LineHeight="19" TextWrapping="Wrap" Margin="0,2,0,0"/>
+                            <TextBlock Text="{Binding VerdictNote}" Style="{StaticResource Text.Body}" FontSize="12.5" LineHeight="19" TextWrapping="Wrap" Margin="0,4,0,0"
+                                       Foreground="{StaticResource Brush.Status.Warning}" Visibility="{Binding VerdictNote, Converter={StaticResource VisibleWhen}}"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </DockPanel>
+</UserControl>

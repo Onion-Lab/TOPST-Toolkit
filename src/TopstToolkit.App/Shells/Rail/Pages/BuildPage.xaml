@@ -1,0 +1,192 @@
+<UserControl x:Class="TopstToolkit.App.Shells.Rail.Pages.BuildPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:TopstToolkit.App.Controls"
+             xmlns:rail="clr-namespace:TopstToolkit.App.Shells.Rail"
+             xmlns:vm="clr-namespace:TopstToolkit.App.ViewModels">
+    <!-- Step 4 "빌드" in layout A. DataContext: BuildViewModel. -->
+    <UserControl.Resources>
+        <!-- one stage of the build -->
+        <DataTemplate x:Key="Stage.Card" DataType="{x:Type vm:StageCardViewModel}">
+            <!-- the outer border is the soft ring of the running stage; it always takes its 3px so nothing moves -->
+            <Border x:Name="ring" CornerRadius="15" Padding="3" Margin="-3,-3,-3,2" Background="Transparent">
+                <Border x:Name="card" Background="White" BorderBrush="{StaticResource Brush.Border.Default}" BorderThickness="1" CornerRadius="12" Padding="16,11">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="20"/>
+                            <ColumnDefinition Width="176"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="56"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <c:StatusDot State="{Binding State}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="name" Grid.Column="1" Text="{Binding Name}" Style="{StaticResource Text.BodyStrong}" LineHeight="20" Margin="12,0,0,0" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="info" Grid.Column="2" Text="{Binding Detail}" Style="{StaticResource Text.Secondary}" FontSize="13" LineHeight="20" Margin="12,0" VerticalAlignment="Center"
+                                   ToolTip="{Binding Detail}"/>
+                        <c:Chip Grid.Column="3" Text="{Binding ChipText}" Kind="{Binding ChipKind}"/>
+                        <TextBlock Grid.Column="4" Text="{Binding TimeText}" Style="{StaticResource Text.Mono}" Foreground="{StaticResource Brush.Text.Muted}" TextAlignment="Right" VerticalAlignment="Center"/>
+                        <DockPanel Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="4" Margin="12,8,0,0" Visibility="{Binding HasProgress, Converter={StaticResource VisibleWhen}}">
+                            <TextBlock DockPanel.Dock="Right" Text="{Binding PercentText}" Style="{StaticResource Text.Caption}" Width="44" TextAlignment="Right" VerticalAlignment="Center"/>
+                            <ProgressBar Style="{StaticResource Progress.Pulse}" Value="{Binding Progress, Mode=OneWay}" VerticalAlignment="Center"/>
+                        </DockPanel>
+                    </Grid>
+                </Border>
+            </Border>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding IsRunning}" Value="True">
+                    <Setter TargetName="ring" Property="Background" Value="{StaticResource Brush.Brand.PrimaryTint}"/>
+                    <Setter TargetName="card" Property="BorderBrush" Value="#BFCBE4"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsTodo}" Value="True">
+                    <Setter TargetName="name" Property="Foreground" Value="{StaticResource Brush.Text.Secondary}"/>
+                    <Setter TargetName="name" Property="FontWeight" Value="Medium"/>
+                    <Setter TargetName="info" Property="Foreground" Value="{StaticResource Brush.Text.Muted}"/>
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <DockPanel Margin="32,22,32,20">
+        <DockPanel DockPanel.Dock="Top" LastChildFill="False" Margin="0,0,0,16">
+            <TextBlock DockPanel.Dock="Left" Text="4 빌드" Style="{StaticResource Page.Title}"/>
+            <c:Chip DockPanel.Dock="Left" Text="{Binding StatusText}" Kind="{Binding StatusKind}" Margin="10,0,0,0"/>
+            <TextBlock DockPanel.Dock="Right" Text="{Binding TimeText}" Style="{StaticResource Page.Note}"/>
+        </DockPanel>
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="28"/>
+                <ColumnDefinition Width="312"/>
+            </Grid.ColumnDefinitions>
+
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False" Margin="-3,-3,-13,0" Padding="3,3,13,0">
+                <StackPanel>
+                    <!-- what went wrong, in plain words -->
+                    <Border Style="{StaticResource Callout.Danger}" Margin="0,0,0,12" Visibility="{Binding ErrorTitle, Converter={StaticResource VisibleWhen}}">
+                        <DockPanel>
+                            <c:Icon DockPanel.Dock="Left" Glyph="Warning" FontSize="16" Foreground="{StaticResource Brush.Status.Danger}" VerticalAlignment="Top" Margin="0,2,10,0"/>
+                            <StackPanel>
+                                <TextBlock Text="{Binding ErrorTitle}" Style="{StaticResource Callout.Text}" FontWeight="SemiBold" Foreground="{StaticResource Brush.Text.Heading}"/>
+                                <TextBlock Text="{Binding ErrorDetail}" Style="{StaticResource Callout.Text}"/>
+                                <TextBlock Text="{Binding ErrorEvidence}" Style="{StaticResource Text.Mono}" Foreground="{StaticResource Brush.Text.Secondary}" TextWrapping="Wrap" Margin="0,6,0,0"
+                                           Visibility="{Binding ErrorEvidence, Converter={StaticResource VisibleWhen}}"/>
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+
+                    <!-- layers the NPU cannot run, and where to cut the network before them (design §5.4) -->
+                    <Border Style="{StaticResource Card}" Margin="0,0,0,12" Visibility="{Binding HasIncompatibleLayers, Converter={StaticResource VisibleWhen}}">
+                        <StackPanel>
+                            <TextBlock Text="NPU가 실행하지 못하는 레이어" Style="{StaticResource Text.Subtitle}" Margin="0,0,0,10"/>
+                            <Control Template="{StaticResource Part.LayerHead}" Focusable="False"/>
+                            <ItemsControl ItemsSource="{Binding IncompatibleLayers}" ItemTemplate="{StaticResource Part.LayerProblem}" Focusable="False"/>
+
+                            <StackPanel Margin="0,16,0,0" Visibility="{Binding HasCutCandidates, Converter={StaticResource VisibleWhen}}">
+                                <DockPanel LastChildFill="False">
+                                    <TextBlock DockPanel.Dock="Left" Text="그 앞에서 잘라내기" Style="{StaticResource Text.Subtitle}" VerticalAlignment="Center"/>
+                                    <Button DockPanel.Dock="Right" Style="{StaticResource Button.Primary}" Content="고른 곳에서 자르고 다시 빌드" Command="{Binding ApplyCutCommand}"/>
+                                </DockPanel>
+                                <TextBlock Text="{Binding CutHint}" Style="{StaticResource Text.Secondary}" FontSize="13" LineHeight="20" TextWrapping="Wrap" Margin="0,6,0,8"/>
+                                <DockPanel Margin="0,0,0,8">
+                                    <TextBlock DockPanel.Dock="Left" Text="고른 레이어" Style="{StaticResource Text.Caption}" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding ChosenText}" Style="{StaticResource Text.Mono}" Foreground="{StaticResource Brush.Brand.Primary}" VerticalAlignment="Center"
+                                               ToolTip="{Binding ChosenText}"/>
+                                </DockPanel>
+                                <Border BorderBrush="{StaticResource Brush.Border.Default}" BorderThickness="1" CornerRadius="8" Height="152">
+                                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
+                                        <ItemsControl ItemsSource="{Binding CutCandidates}" Focusable="False" Margin="12,6">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate DataType="{x:Type vm:CutCandidate}">
+                                                    <CheckBox Style="{StaticResource Check}" IsChecked="{Binding IsChecked}" Margin="0,5">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <TextBlock Text="{Binding Index}" Style="{StaticResource Text.Mono}" Foreground="{StaticResource Brush.Text.Muted}" Width="40"/>
+                                                            <TextBlock Text="{Binding Name}" Style="{StaticResource Text.Mono}"/>
+                                                            <TextBlock Text="{Binding Kind}" Style="{StaticResource Text.Caption}" Margin="12,0,0,0" VerticalAlignment="Center"/>
+                                                        </StackPanel>
+                                                    </CheckBox>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </ScrollViewer>
+                                </Border>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <ItemsControl ItemsSource="{Binding Stages}" ItemTemplate="{StaticResource Stage.Card}" Focusable="False"/>
+                </StackPanel>
+            </ScrollViewer>
+
+            <StackPanel Grid.Column="2">
+                <!-- finished: on to the result -->
+                <Border Style="{StaticResource Callout}" Margin="0,0,0,12" Visibility="{Binding Succeeded, Converter={StaticResource VisibleWhen}}">
+                    <StackPanel>
+                        <TextBlock Text="빌드가 끝났습니다." Style="{StaticResource Callout.Text}" FontWeight="SemiBold" Foreground="{StaticResource Brush.Text.Heading}"/>
+                        <TextBlock Text="사진 위에 그린 결과를 확인해 보세요." Style="{StaticResource Callout.Text}"/>
+                        <Button Style="{StaticResource Button.Link}" Content="5 결과 보기 →" Command="{Binding GoToResultCommand}" Margin="0,6,0,0"/>
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Callout.Danger}" Margin="0,0,0,12" Visibility="{Binding EngineMissing, Converter={StaticResource VisibleWhen}}">
+                    <StackPanel>
+                        <TextBlock Text="엔진이 아직 설치되지 않아 빌드할 수 없어요. 처음 한 번 공식 사이트에서 받아 설치하면 됩니다." Style="{StaticResource Callout.Text}"/>
+                        <Button Style="{StaticResource Button.Link}" Content="엔진 설치하러 가기 →" Margin="0,6,0,0" HorizontalAlignment="Left"
+                                Command="{Binding DataContext.NavigateCommand, RelativeSource={RelativeSource AncestorType=rail:RailShell}}"
+                                CommandParameter="{Binding DataContext.HomeItem, RelativeSource={RelativeSource AncestorType=rail:RailShell}}"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource Card}" Margin="0,0,0,12" Visibility="{Binding IsDetection, Converter={StaticResource VisibleWhen}}">
+                    <StackPanel>
+                        <TextBlock Text="보드에 고정되는 값" Style="{StaticResource Text.Subtitle}" Margin="0,0,0,12"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="16"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="검출 최소 점수" Style="{StaticResource Text.Field}"/>
+                                <TextBox Style="{StaticResource Input.Number}" Text="{Binding ThConfText, UpdateSourceTrigger=PropertyChanged}" ToolTip="툴킷 옵션 --th-conf"
+                                         IsEnabled="{Binding IsRunning, Converter={StaticResource Not}}"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="겹침 제거 기준" Style="{StaticResource Text.Field}"/>
+                                <TextBox Style="{StaticResource Input.Number}" Text="{Binding ThIouText, UpdateSourceTrigger=PropertyChanged}" ToolTip="툴킷 옵션 --th-iou"
+                                         IsEnabled="{Binding IsRunning, Converter={StaticResource Not}}"/>
+                            </StackPanel>
+                        </Grid>
+                        <TextBlock Text="{Binding ThresholdError}" Style="{StaticResource Text.Help}" Foreground="{StaticResource Brush.Status.Danger}"
+                                   Visibility="{Binding ThresholdError, Converter={StaticResource VisibleWhen}}"/>
+                        <TextBlock Text="컴파일할 때 보드용 코드에 들어갑니다. 바꾸면 컴파일부터 다시 합니다." Style="{StaticResource Text.Help}" Margin="0,10,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Text="이번 빌드" Style="{StaticResource Text.Subtitle}" Margin="0,0,0,8"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions><RowDefinition/><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
+                            <TextBlock Text="새로 실행" Style="{StaticResource Text.Caption}" FontSize="13" LineHeight="26"/>
+                            <TextBlock Grid.Column="1" Text="{Binding ExecutedText}" Style="{StaticResource Text.Body}" FontSize="13" LineHeight="26" TextAlignment="Right"/>
+                            <TextBlock Grid.Row="1" Text="재사용" Style="{StaticResource Text.Caption}" FontSize="13" LineHeight="26"/>
+                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding ReusedText}" Style="{StaticResource Text.Body}" FontSize="13" LineHeight="26" TextAlignment="Right"/>
+                            <TextBlock Grid.Row="2" Text="가장 많이 쓴 메모리" Style="{StaticResource Text.Caption}" FontSize="13" LineHeight="26"/>
+                            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding MemoryText}" Style="{StaticResource Text.Body}" FontSize="13" LineHeight="26" TextAlignment="Right"/>
+                        </Grid>
+                        <Button Style="{StaticResource Button.Secondary}" Content="{Binding BuildButtonText}" Command="{Binding BuildCommand}" Margin="0,12,0,0"
+                                Visibility="{Binding IsRunning, Converter={StaticResource VisibleWhen}, ConverterParameter=invert}"/>
+                        <TextBlock Text="바뀐 것이 없는 단계는 이전 결과를 다시 씁니다." Style="{StaticResource Text.Help}"/>
+                        <TextBlock Text="보드용 빌드 도구가 없어 net.so는 만들지 않습니다." Style="{StaticResource Text.Help}" Foreground="{StaticResource Brush.Status.Warning}"
+                                   Visibility="{Binding BoardToolsMissing, Converter={StaticResource VisibleWhen}}"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </Grid>
+    </DockPanel>
+</UserControl>

@@ -1,0 +1,871 @@
+<UserControl x:Class="TopstToolkit.App.Shells.Rail.Pages.BoardPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:TopstToolkit.App.Controls"
+             xmlns:vm="clr-namespace:TopstToolkit.App.ViewModels"
+             xmlns:core="clr-namespace:TopstToolkit.Core.Board;assembly=TopstToolkit.Core">
+    <!-- 도구 › 보드 in layout A (design §5.10, docs/mockups/mockup-board.html). DataContext: BoardViewModel. -->
+    <UserControl.Resources>
+        <SolidColorBrush x:Key="Board.Cpu" Color="#3D8AED"/>
+        <SolidColorBrush x:Key="Board.Npu" Color="#18A06B"/>
+        <SolidColorBrush x:Key="Board.Memory" Color="#7184FD"/>
+        <SolidColorBrush x:Key="Board.Heat" Color="#D97706"/>
+
+        <!-- the 8px bar of the status tab; its colour comes from Foreground -->
+        <Style x:Key="Board.Bar" TargetType="ProgressBar" BasedOn="{StaticResource Progress.Pulse}">
+            <Setter Property="Height" Value="8"/>
+        </Style>
+
+        <!-- name · bar · value. The bar's colour is the ItemsControl's Tag. DataContext: vm:MeterRow -->
+        <DataTemplate x:Key="Board.Meter" DataType="{x:Type vm:MeterRow}">
+            <Grid Margin="0,6">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="92"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="124"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="{Binding Name}" Style="{StaticResource Text.Label}" VerticalAlignment="Center"/>
+                <ProgressBar Grid.Column="1" Style="{StaticResource Board.Bar}" Value="{Binding Fraction, Mode=OneWay}" VerticalAlignment="Center"
+                             Foreground="{Binding Tag, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
+                <TextBlock x:Name="v" Grid.Column="2" HorizontalAlignment="Right" VerticalAlignment="Center" Style="{StaticResource Text.Label}"
+                           Foreground="{StaticResource Brush.Text.Heading}">
+                    <Run Text="{Binding Value, Mode=OneWay}"/><Run x:Name="u" Text="{Binding Unit, Mode=OneWay}" FontSize="12" Foreground="{StaticResource Brush.Text.Muted}"/>
+                </TextBlock>
+            </Grid>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding Muted}" Value="True">
+                    <Setter TargetName="v" Property="Foreground" Value="{StaticResource Brush.Text.Muted}"/>
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
+        <!-- one of the four tiles on top of the status tab -->
+        <Style x:Key="Board.Kpi" TargetType="Border" BasedOn="{StaticResource Card}">
+            <Setter Property="Padding" Value="16,14"/>
+        </Style>
+        <Style x:Key="Board.KpiValue" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource Font.Brand}"/>
+            <Setter Property="FontSize" Value="30"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="{StaticResource Brush.Text.Heading}"/>
+            <Setter Property="Margin" Value="0,6,0,8"/>
+        </Style>
+
+        <!-- bold head of one area inside a card -->
+        <Style x:Key="Board.AreaHead" TargetType="TextBlock" BasedOn="{StaticResource Text.Base}">
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="{StaticResource Brush.Text.Heading}"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+        <!-- a fact of the strip under the cards -->
+        <Style x:Key="Board.FactValue" TargetType="TextBlock" BasedOn="{StaticResource Text.Label}">
+            <Setter Property="FontSize" Value="13.5"/>
+            <Setter Property="Foreground" Value="{StaticResource Brush.Text.Heading}"/>
+            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+            <Setter Property="Margin" Value="0,2,0,0"/>
+        </Style>
+
+        <!-- the little labels on a picture (보드 결과, NPU 9.8 ms) -->
+        <Style x:Key="Board.Hud" TargetType="Border">
+            <Setter Property="Background" Value="#AD111111"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="8,0"/>
+            <Setter Property="Height" Value="22"/>
+            <Setter Property="Margin" Value="0,0,6,0"/>
+            <Setter Property="TextElement.Foreground" Value="White"/>
+            <Setter Property="TextElement.FontSize" Value="11.5"/>
+            <Setter Property="TextElement.FontWeight" Value="SemiBold"/>
+        </Style>
+
+        <Style x:Key="Board.Password" TargetType="PasswordBox">
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="FontFamily" Value="{StaticResource Font.Ui}"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Padding" Value="10,0"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="PasswordBox">
+                        <Border x:Name="b" Background="White" BorderBrush="{StaticResource Brush.Border.Default}" BorderThickness="1" CornerRadius="8">
+                            <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                <Setter TargetName="b" Property="BorderBrush" Value="{StaticResource Brush.Brand.Primary}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- a picture of the run in the strip on the left. DataContext: vm:BoardPhoto -->
+        <DataTemplate x:Key="Board.Thumb" DataType="{x:Type vm:BoardPhoto}">
+            <Button Command="{Binding DataContext.Run.SelectPhotoCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"
+                    Margin="0,0,0,8" Cursor="Hand" ToolTip="{Binding Name}">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Grid Height="57">
+                            <Border x:Name="ring" CornerRadius="9" BorderThickness="2" BorderBrush="Transparent" Margin="-3"/>
+                            <Border CornerRadius="7" Background="{StaticResource Brush.Surface.Sunken}"/>
+                            <Border CornerRadius="7">
+                                <Border.Background>
+                                    <ImageBrush ImageSource="{Binding Thumb}" Stretch="UniformToFill"/>
+                                </Border.Background>
+                            </Border>
+                            <Border x:Name="badge" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,4,4" Height="18" Padding="6,0" CornerRadius="9" Background="#B8111111">
+                                <TextBlock Text="{Binding Badge}" Foreground="White" FontSize="10.5" FontWeight="SemiBold" VerticalAlignment="Center" MaxWidth="60" TextTrimming="CharacterEllipsis"/>
+                            </Border>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                <Setter TargetName="ring" Property="BorderBrush" Value="{StaticResource Brush.Brand.Primary}"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding State}" Value="Running">
+                                <Setter TargetName="badge" Property="Background" Value="#3D8AED"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding State}" Value="Todo">
+                                <Setter TargetName="badge" Property="Background" Value="#D96B7280"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding State}" Value="Failed">
+                                <Setter TargetName="badge" Property="Background" Value="{StaticResource Brush.Status.Danger}"/>
+                            </DataTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+        </DataTemplate>
+
+        <!-- one check before the model goes to the board. DataContext: core:BoardCheck -->
+        <DataTemplate x:Key="Board.Check" DataType="{x:Type core:BoardCheck}">
+            <DockPanel Margin="0,3" ToolTip="{Binding Detail}">
+                <Grid DockPanel.Dock="Left" Width="16" Height="16" Margin="0,2,8,0" VerticalAlignment="Top">
+                    <Ellipse x:Name="dot" Fill="{StaticResource Brush.Status.Success}"/>
+                    <c:Icon x:Name="mark" Glyph="Accept" FontSize="9" Foreground="White"/>
+                </Grid>
+                <TextBlock Text="{Binding Text}" Style="{StaticResource Text.Body}" FontSize="13" LineHeight="20"/>
+            </DockPanel>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding Ok}" Value="False">
+                    <Setter TargetName="dot" Property="Fill" Value="{StaticResource Brush.Status.Danger}"/>
+                    <Setter TargetName="mark" Property="Glyph" Value="Cancel"/>
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
+        <!-- a line of "PC 결과와 비교". DataContext: vm:BoardCompareRow -->
+        <DataTemplate x:Key="Board.Compare" DataType="{x:Type vm:BoardCompareRow}">
+            <Border BorderBrush="{StaticResource Brush.Border.Default}" BorderThickness="0,0,0,1" Padding="10,6">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="64"/>
+                        <ColumnDefinition Width="64"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Orientation="Horizontal">
+                        <Border Width="10" Height="10" CornerRadius="3" Background="{Binding Swatch}" Margin="0,0,7,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding Name}" Style="{StaticResource Text.Body}" FontSize="13" LineHeight="20" TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+                    <TextBlock Grid.Column="1" Text="{Binding Board}" Style="{StaticResource Text.Body}" FontSize="13" LineHeight="20" TextAlignment="Right"/>
+                    <TextBlock Grid.Column="2" Text="{Binding Pc}" Style="{StaticResource Text.Body}" FontSize="13" LineHeight="20" TextAlignment="Right"/>
+                </Grid>
+            </Border>
+        </DataTemplate>
+
+        <!-- a model folder on the board. DataContext: vm:BoardModelRow -->
+        <DataTemplate x:Key="Board.ModelRow" DataType="{x:Type vm:BoardModelRow}">
+            <Border BorderBrush="{StaticResource Brush.Border.Default}" BorderThickness="0,0,0,1" Padding="0,10">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="28"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <Border x:Name="tile" Width="28" Height="28" CornerRadius="8" Background="{StaticResource Brush.Brand.PrimaryTint}">
+                        <c:Icon x:Name="icon" Glyph="Package" FontSize="14" Foreground="{StaticResource Brush.Brand.Primary}"/>
+                    </Border>
+                    <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Title}" Style="{StaticResource Text.Label}" FontWeight="SemiBold" Foreground="{StaticResource Brush.Text.Heading}" TextTrimming="CharacterEllipsis"/>
+                        <TextBlock Text="{Binding Caption}" Style="{StaticResource Text.Caption}"/>
+                    </StackPanel>
+                    <Button Grid.Column="2" Style="{StaticResource Button.Secondary.Small}" Content="실행" VerticalAlignment="Center"
+                            Command="{Binding DataContext.Manage.RunModelCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
+                    <Button x:Name="del" Grid.Column="3" Style="{StaticResource Button.Quiet.Small}" Content="지우기" Margin="6,0,0,0" VerticalAlignment="Center"
+                            Command="{Binding DataContext.Manage.DeleteModelCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
+                </Grid>
+            </Border>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding IsApp}" Value="False">
+                    <Setter TargetName="del" Property="Visibility" Value="Hidden"/>
+                    <Setter TargetName="tile" Property="Background" Value="{StaticResource Brush.Surface.Sunken}"/>
+                    <Setter TargetName="icon" Property="Foreground" Value="{StaticResource Brush.Text.Muted}"/>
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <Grid Margin="32,22,32,20">
+
+        <!-- ======================================================= ① not connected -->
+        <DockPanel Visibility="{Binding IsConnected, Converter={StaticResource VisibleWhen}, ConverterParameter=invert}">
+            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,16">
+                <TextBlock Text="보드" Style="{StaticResource Page.Title}"/>
+                <c:Chip Text="{Binding ChipText}" Kind="{Binding ChipKind}" Margin="10,0,0,0" VerticalAlignment="Center"/>
+            </StackPanel>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" MaxWidth="640"/>
+                    <ColumnDefinition Width="28"/>
+                    <ColumnDefinition Width="312"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <Border Style="{StaticResource Callout.Warning}" Margin="0,0,0,12" Visibility="{Binding LostText, Converter={StaticResource VisibleWhen}}">
+                        <TextBlock Text="{Binding LostText}" Style="{StaticResource Callout.Text}"/>
+                    </Border>
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <DockPanel LastChildFill="False" Margin="0,0,0,12">
+                                <TextBlock DockPanel.Dock="Left" Text="보드 찾기" Style="{StaticResource Text.Subtitle}"/>
+                                <Button DockPanel.Dock="Right" Style="{StaticResource Button.Secondary.Small}" Command="{Binding ScanCommand}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <c:Icon Glyph="Refresh" FontSize="12"/>
+                                        <TextBlock Text="다시 찾기" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                            </DockPanel>
+                            <ItemsControl ItemsSource="{Binding Found}" Focusable="False">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type vm:BoardFoundRow}">
+                                        <Button Command="{Binding DataContext.PickFoundCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"
+                                                Margin="0,0,0,8" Cursor="Hand">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border x:Name="b" Background="White" BorderBrush="{StaticResource Brush.Border.Default}" BorderThickness="1" CornerRadius="10" Padding="14,12">
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="36"/>
+                                                                <ColumnDefinition Width="*"/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                            </Grid.ColumnDefinitions>
+                                                            <Border Width="36" Height="36" CornerRadius="9" Background="{StaticResource Brush.Brand.PrimaryTint}">
+                                                                <c:Icon Glyph="Chip" FontSize="17" Foreground="{StaticResource Brush.Brand.Primary}"/>
+                                                            </Border>
+                                                            <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center">
+                                                                <TextBlock Text="{Binding Title}" Style="{StaticResource Text.Label}" FontWeight="SemiBold" Foreground="{StaticResource Brush.Text.Heading}"/>
+                                                                <TextBlock Text="{Binding Caption}" Style="{StaticResource Text.Caption}"/>
+                                                            </StackPanel>
+                                                            <c:Chip x:Name="chip" Grid.Column="2" Text="찾음" Kind="Ok" VerticalAlignment="Center"/>
+                                                        </Grid>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                            <Setter TargetName="b" Property="BorderBrush" Value="{StaticResource Brush.Brand.Primary}"/>
+                                                            <Setter TargetName="b" Property="BorderThickness" Value="1.5"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding IsTopst}" Value="False">
+                                                            <Setter TargetName="chip" Property="Text" Value="SSH"/>
+                                                            <Setter TargetName="chip" Property="Kind" Value="Muted"/>
+                                                        </DataTrigger>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="b" Property="Background" Value="{StaticResource Brush.Surface.Rail}"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10" Visibility="{Binding ScanText, Converter={StaticResource VisibleWhen}}">
+                                <ProgressBar Style="{StaticResource Progress.Pulse}" IsIndeterminate="True" Width="60" Margin="0,0,10,0" VerticalAlignment="Center"
+                                             Visibility="{Binding IsScanning, Converter={StaticResource VisibleWhen}}"/>
+                                <TextBlock Text="{Binding ScanText}" Style="{StaticResource Text.Caption}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="12"/>
+                                    <ColumnDefinition Width="140"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="보드 주소" Style="{StaticResource Text.Field}" Margin="0,0,0,6"/>
+                                    <TextBox Style="{StaticResource Input}" Text="{Binding Host, UpdateSourceTrigger=PropertyChanged}" FontFamily="{StaticResource Font.Mono}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="사용자" Style="{StaticResource Text.Field}" Margin="0,0,0,6"/>
+                                    <TextBox Style="{StaticResource Input}" Text="{Binding User, UpdateSourceTrigger=PropertyChanged}"/>
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource Card}" Margin="0,12,0,0">
+                        <StackPanel>
+                            <TextBlock Text="접속 방법" Style="{StaticResource Text.Subtitle}" Margin="0,0,0,12"/>
+                            <RadioButton Style="{StaticResource Choice}" GroupName="boardAuth" IsChecked="{Binding IsKeyMode}" Padding="14,10">
+                                <StackPanel>
+                                    <TextBlock Text="이 PC의 키로 접속" Style="{StaticResource Text.Label}" FontWeight="SemiBold" Foreground="{StaticResource Brush.Text.Heading}"/>
+                                    <TextBlock Text="이미 등록돼 있다면 바로 연결돼요" Style="{StaticResource Text.Caption}"/>
+                                </StackPanel>
+                            </RadioButton>
+                            <RadioButton Style="{StaticResource Choice}" GroupName="boardAuth" IsChecked="{Binding IsPasswordMode}" Padding="14,10" Margin="0,8,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="처음 연결 — 비밀번호 입력" Style="{StaticResource Text.Label}" FontWeight="SemiBold" Foreground="{StaticResource Brush.Text.Heading}"/>
+                                    <TextBlock Text="한 번만 입력하면 다음부터는 묻지 않아요" Style="{StaticResource Text.Caption}"/>
+                                </StackPanel>
+                            </RadioButton>
+                            <StackPanel Margin="0,12,0,0" Visibility="{Binding IsPasswordMode, Converter={StaticResource VisibleWhen}}">
+                                <TextBlock Text="보드 비밀번호" Style="{StaticResource Text.Field}" Margin="0,0,0,6"/>
+                                <PasswordBox x:Name="PasswordInput" Style="{StaticResource Board.Password}" PasswordChanged="OnPasswordChanged" MaxWidth="320" HorizontalAlignment="Left" Width="320"/>
+                            </StackPanel>
+                            <Border Style="{StaticResource Callout.Danger}" Margin="0,12,0,0" Visibility="{Binding ConnectError, Converter={StaticResource VisibleWhen}}">
+                                <StackPanel>
+                                    <TextBlock Text="{Binding ConnectError}" Style="{StaticResource Callout.Text}" FontWeight="SemiBold"/>
+                                    <TextBlock Text="{Binding ConnectHelp}" Style="{StaticResource Callout.Text}" Visibility="{Binding ConnectHelp, Converter={StaticResource VisibleWhen}}"/>
+                                    <Button Style="{StaticResource Button.Link}" Content="예전 키 지우고 다시 연결 →" Margin="0,6,0,0" HorizontalAlignment="Left"
+                                            Command="{Binding ForgetHostKeyCommand}" Visibility="{Binding CanForgetHostKey, Converter={StaticResource VisibleWhen}}"/>
+                                </StackPanel>
+                            </Border>
+                            <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                                <Button Style="{StaticResource Button.Primary}" Command="{Binding ConnectCommand}" Height="40" Padding="20,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <c:Icon Glyph="Chip" FontSize="14"/>
+                                        <TextBlock Text="연결" Margin="7,0,0,0" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                                <TextBlock Text="{Binding ConnectProgress}" Style="{StaticResource Text.Caption}" Margin="12,0,0,0" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <Border Grid.Column="2" Style="{StaticResource Card.Flat}" VerticalAlignment="Top">
+                    <StackPanel>
+                        <TextBlock Text="처음 연결하나요?" Style="{StaticResource Text.Subtitle}" Margin="0,0,0,12"/>
+                        <StackPanel>
+                            <StackPanel.Resources>
+                                <Style x:Key="Step.Number" TargetType="Border">
+                                    <Setter Property="Width" Value="20"/>
+                                    <Setter Property="Height" Value="20"/>
+                                    <Setter Property="CornerRadius" Value="10"/>
+                                    <Setter Property="Background" Value="{StaticResource Brush.Surface.Sunken}"/>
+                                    <Setter Property="Margin" Value="0,0,10,0"/>
+                                    <Setter Property="VerticalAlignment" Value="Top"/>
+                                    <Setter Property="TextElement.FontSize" Value="11"/>
+                                    <Setter Property="TextElement.FontWeight" Value="SemiBold"/>
+                                    <Setter Property="TextElement.Foreground" Value="{StaticResource Brush.Text.Secondary}"/>
+                                </Style>
+                            </StackPanel.Resources>
+                            <DockPanel Margin="0,0,0,9">
+                                <Border DockPanel.Dock="Left" Style="{StaticResource Step.Number}"><TextBlock Text="1" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                                <TextBlock Text="보드를 PC와 같은 공유기에 연결합니다." Style="{StaticResource Text.Body}" FontSize="13" LineHeight="20" TextWrapping="Wrap"/>
+                            </DockPanel>
+                            <DockPanel Margin="0,0,0,9">
+                                <Border DockPanel.Dock="Left" Style="{StaticResource Step.Number}"><TextBlock Text="2" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                                <TextBlock Text="목록에 나온 보드를 고릅니다." Style="{StaticResource Text.Body}" FontSize="13" LineHeight="20" TextWrapping="Wrap"/>
+                            </DockPanel>
+                            <DockPanel>
+                                <Border DockPanel.Dock="Left" Style="{StaticResource Step.Number}"><TextBlock Text="3" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                                <TextBlock Text="처음이면 비밀번호를 한 번 입력합니다." Style="{StaticResource Text.Body}" FontSize="13" LineHeight="20" TextWrapping="Wrap"/>
+                            </DockPanel>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </DockPanel>
+
+        <!-- ======================================================= connected -->
+        <DockPanel Visibility="{Binding IsConnected, Converter={StaticResource VisibleWhen}}">
+            <DockPanel DockPanel.Dock="Top" LastChildFill="False" Margin="0,0,0,14">
+                <TextBlock DockPanel.Dock="Left" Text="보드" Style="{StaticResource Page.Title}"/>
+                <c:Chip DockPanel.Dock="Left" Text="{Binding ChipText}" Kind="{Binding ChipKind}" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                <TextBlock DockPanel.Dock="Left" Text="{Binding HeaderCaption}" Style="{StaticResource Page.Note}" Margin="12,0,0,0"/>
+                <Button DockPanel.Dock="Right" Style="{StaticResource Button.Secondary.Small}" Content="연결 끊기" Command="{Binding DisconnectCommand}" VerticalAlignment="Center"/>
+            </DockPanel>
+            <Border DockPanel.Dock="Top" Style="{StaticResource Seg.Frame}" HorizontalAlignment="Left" Margin="0,0,0,14">
+                <StackPanel Orientation="Horizontal">
+                    <RadioButton Style="{StaticResource Seg}" GroupName="boardTab" Tag="first" Content="상태" IsChecked="{Binding IsStatusTab}"/>
+                    <RadioButton Style="{StaticResource Seg}" GroupName="boardTab" Content="실행" IsChecked="{Binding IsRunTab}"/>
+                    <RadioButton Style="{StaticResource Seg}" GroupName="boardTab" Tag="last" Content="올린 모델 · 관리" IsChecked="{Binding IsManageTab}"/>
+                </StackPanel>
+            </Border>
+
+            <Grid>
+                <!-- =================================================== ② status -->
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False"
+                              Visibility="{Binding IsStatusTab, Converter={StaticResource VisibleWhen}}">
+                    <StackPanel>
+                        <UniformGrid Columns="4">
+                            <Border Style="{StaticResource Board.Kpi}" Margin="0,0,9,0">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal">
+                                        <c:Icon Glyph="Speed" FontSize="15" Foreground="{StaticResource Board.Cpu}"/>
+                                        <TextBlock Text="CPU" Style="{StaticResource Text.Label}" Foreground="{StaticResource Brush.Text.Secondary}" Margin="6,0,0,0"/>
+                                    </StackPanel>
+                                    <TextBlock Style="{StaticResource Board.KpiValue}"><Run Text="{Binding CpuValue, Mode=OneWay}"/><Run Text=" %" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource Brush.Text.Muted}"/></TextBlock>
+                                    <ProgressBar Style="{StaticResource Board.Bar}" Foreground="{StaticResource Board.Cpu}" Value="{Binding CpuFraction, Mode=OneWay}"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource Board.Kpi}" Margin="3,0,6,0">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal">
+                                        <c:Icon Glyph="Chip" FontSize="15" Foreground="{StaticResource Board.Npu}"/>
+                                        <TextBlock Text="NPU" Style="{StaticResource Text.Label}" Foreground="{StaticResource Brush.Text.Secondary}" Margin="6,0,0,0"/>
+                                    </StackPanel>
+                                    <TextBlock Style="{StaticResource Board.KpiValue}"><Run Text="{Binding NpuValue, Mode=OneWay}"/><Run Text=" %" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource Brush.Text.Muted}"/></TextBlock>
+                                    <ProgressBar Style="{StaticResource Board.Bar}" Foreground="{StaticResource Board.Npu}" Value="{Binding NpuFraction, Mode=OneWay}"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource Board.Kpi}" Margin="6,0,3,0">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal">
+                                        <c:Icon Glyph="Layers" FontSize="15" Foreground="{StaticResource Board.Memory}"/>
+                                        <TextBlock Text="메모리" Style="{StaticResource Text.Label}" Foreground="{StaticResource Brush.Text.Secondary}" Margin="6,0,0,0"/>
+                                    </StackPanel>
+                                    <TextBlock Style="{StaticResource Board.KpiValue}"><Run Text="{Binding MemoryValue, Mode=OneWay}"/><Run Text=" %" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource Brush.Text.Muted}"/></TextBlock>
+                                    <ProgressBar Style="{StaticResource Board.Bar}" Foreground="{StaticResource Board.Memory}" Value="{Binding MemoryFraction, Mode=OneWay}"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource Board.Kpi}" Margin="9,0,0,0">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal">
+                                        <c:Icon Glyph="Heat" FontSize="15" Foreground="{StaticResource Board.Heat}"/>
+                                        <TextBlock Text="온도" Style="{StaticResource Text.Label}" Foreground="{StaticResource Brush.Text.Secondary}" Margin="6,0,0,0"/>
+                                    </StackPanel>
+                                    <TextBlock Style="{StaticResource Board.KpiValue}"><Run Text="{Binding TemperatureValue, Mode=OneWay}"/><Run Text=" °C" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource Brush.Text.Muted}"/></TextBlock>
+                                    <ProgressBar Style="{StaticResource Board.Bar}" Foreground="{StaticResource Board.Heat}" Value="{Binding TemperatureFraction, Mode=OneWay}"/>
+                                </StackPanel>
+                            </Border>
+                        </UniformGrid>
+
+                        <Grid Margin="0,12,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="12"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <!-- one card, two areas: CPU over NPU -->
+                            <Border Style="{StaticResource Card}">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                        <c:Icon Glyph="Speed" FontSize="15" Foreground="{StaticResource Board.Cpu}"/>
+                                        <TextBlock Text="CPU" Style="{StaticResource Board.AreaHead}" Margin="7,0,0,0"/>
+                                    </StackPanel>
+                                    <ItemsControl ItemsSource="{Binding Cores}" ItemTemplate="{StaticResource Board.Meter}" Tag="{StaticResource Board.Cpu}" Focusable="False"/>
+                                    <Border Style="{StaticResource Divider}" Margin="-16,10,-16,12"/>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                        <c:Icon Glyph="Chip" FontSize="15" Foreground="{StaticResource Board.Npu}"/>
+                                        <TextBlock Text="NPU" Style="{StaticResource Board.AreaHead}" Margin="7,0,0,0"/>
+                                    </StackPanel>
+                                    <ItemsControl ItemsSource="{Binding Npus}" ItemTemplate="{StaticResource Board.Meter}" Tag="{StaticResource Board.Npu}" Focusable="False"/>
+                                </StackPanel>
+                            </Border>
+                            <!-- memory over temperature -->
+                            <Border Grid.Column="2" Style="{StaticResource Card}">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                        <c:Icon Glyph="Layers" FontSize="15" Foreground="{StaticResource Board.Memory}"/>
+                                        <TextBlock Text="메모리" Style="{StaticResource Board.AreaHead}" Margin="7,0,0,0"/>
+                                    </StackPanel>
+                                    <ItemsControl ItemsSource="{Binding Memory}" ItemTemplate="{StaticResource Board.Meter}" Tag="{StaticResource Board.Memory}" Focusable="False"/>
+                                    <Border Style="{StaticResource Divider}" Margin="-16,10,-16,12"/>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                        <c:Icon Glyph="Heat" FontSize="15" Foreground="{StaticResource Board.Heat}"/>
+                                        <TextBlock Text="온도" Style="{StaticResource Board.AreaHead}" Margin="7,0,0,0"/>
+                                    </StackPanel>
+                                    <ItemsControl ItemsSource="{Binding Temperatures}" ItemTemplate="{StaticResource Board.Meter}" Tag="{StaticResource Board.Heat}" Focusable="False"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <!-- facts strip -->
+                        <Border Background="White" BorderBrush="{StaticResource Brush.Border.Default}" BorderThickness="1" CornerRadius="12" Margin="0,12,0,0">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="1*"/>
+                                    <ColumnDefinition Width="1.6*"/>
+                                    <ColumnDefinition Width="1.2*"/>
+                                    <ColumnDefinition Width="1*"/>
+                                    <ColumnDefinition Width="1*"/>
+                                </Grid.ColumnDefinitions>
+                                <Border BorderBrush="{StaticResource Brush.Border.Default}" BorderThickness="0,0,1,0" Padding="16,12">
+                                    <StackPanel><TextBlock Text="이름" Style="{StaticResource Text.Caption}"/><TextBlock Text="{Binding NameText}" Style="{StaticResource Board.FactValue}"/></StackPanel>
+                                </Border>
+                                <Border Grid.Column="1" BorderBrush="{StaticResource Brush.Border.Default}" BorderThickness="0,0,1,0" Padding="16,12">
+                                    <StackPanel><TextBlock Text="시스템" Style="{StaticResource Text.Caption}"/><TextBlock Text="{Binding OsText}" Style="{StaticResource Board.FactValue}" ToolTip="{Binding OsText}"/></StackPanel>
+                                </Border>
+                                <Border Grid.Column="2" BorderBrush="{StaticResource Brush.Border.Default}" BorderThickness="0,0,1,0" Padding="16,12">
+                                    <StackPanel><TextBlock Text="저장 공간" Style="{StaticResource Text.Caption}"/><TextBlock Text="{Binding DiskText}" Style="{StaticResource Board.FactValue}"/></StackPanel>
+                                </Border>
+                                <Border Grid.Column="3" BorderBrush="{StaticResource Brush.Border.Default}" BorderThickness="0,0,1,0" Padding="16,12">
+                                    <StackPanel><TextBlock Text="켜진 지" Style="{StaticResource Text.Caption}"/><TextBlock Text="{Binding UptimeText}" Style="{StaticResource Board.FactValue}"/></StackPanel>
+                                </Border>
+                                <Border Grid.Column="4" Padding="16,12">
+                                    <StackPanel><TextBlock Text="네트워크" Style="{StaticResource Text.Caption}"/><TextBlock Text="{Binding NetworkText}" Style="{StaticResource Board.FactValue}"/></StackPanel>
+                                </Border>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- =================================================== ③ ④ run -->
+                <Grid DataContext="{Binding Run}" Visibility="{Binding DataContext.IsRunTab, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource VisibleWhen}}">
+                    <!-- nothing to run yet -->
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="440" Visibility="{Binding HasTarget, Converter={StaticResource VisibleWhen}, ConverterParameter=invert}">
+                        <c:VoxelArt Voxels="0,0,0;1,0,0;2,0,0;1,0,1" Unit="14" HorizontalAlignment="Center"/>
+                        <TextBlock Text="{Binding EmptyTitle}" Style="{StaticResource Text.Subtitle}" HorizontalAlignment="Center" Margin="0,18,0,6"/>
+                        <TextBlock Text="{Binding EmptyText}" Style="{StaticResource Text.Secondary}" TextWrapping="Wrap" TextAlignment="Center"/>
+                        <Button Style="{StaticResource Button.Secondary}" Content="보드에 있는 모델 고르기" Command="{Binding ChooseBoardModelCommand}" HorizontalAlignment="Center" Margin="0,16,0,0"/>
+                    </StackPanel>
+
+                    <Grid Visibility="{Binding HasTarget, Converter={StaticResource VisibleWhen}}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="28"/>
+                            <ColumnDefinition Width="312"/>
+                        </Grid.ColumnDefinitions>
+
+                        <DockPanel>
+                            <!-- the model, the input and the NPU -->
+                            <Border DockPanel.Dock="Top" Style="{StaticResource Card}" Padding="16,12">
+                                <StackPanel>
+                                    <DockPanel LastChildFill="True">
+                                        <c:Icon DockPanel.Dock="Left" Glyph="Package" FontSize="22" Foreground="{StaticResource Brush.Brand.Primary}" Margin="0,0,14,0"/>
+                                        <Border DockPanel.Dock="Right" Style="{StaticResource Seg.Frame}" VerticalAlignment="Center">
+                                            <StackPanel Orientation="Horizontal">
+                                                <RadioButton Style="{StaticResource Seg}" GroupName="boardInput" Tag="first" Content="사진" IsChecked="{Binding IsPhotoMode}"/>
+                                                <RadioButton Style="{StaticResource Seg}" GroupName="boardInput" Content="영상" IsChecked="{Binding IsVideoMode}"/>
+                                                <RadioButton Style="{StaticResource Seg}" GroupName="boardInput" Tag="last" Content="보드 카메라" IsEnabled="False" ToolTip="다음 단계에서 추가해요"/>
+                                            </StackPanel>
+                                        </Border>
+                                        <StackPanel VerticalAlignment="Center" Margin="0,0,12,0">
+                                            <TextBlock Text="{Binding TargetTitle}" Style="{StaticResource Text.Label}" FontWeight="SemiBold" Foreground="{StaticResource Brush.Text.Heading}" TextTrimming="CharacterEllipsis"/>
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="{Binding TargetCaption}" Style="{StaticResource Text.Caption}"/>
+                                                <Button Style="{StaticResource Button.Link}" Content="프로젝트 모델로" FontSize="12" Margin="10,0,0,0" Command="{Binding UseProjectModelCommand}"
+                                                        Visibility="{Binding IsBoardModel, Converter={StaticResource VisibleWhen}}"/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </DockPanel>
+                                    <Border Style="{StaticResource Divider}" Margin="-16,10,-16,10"/>
+                                    <DockPanel LastChildFill="False">
+                                        <TextBlock DockPanel.Dock="Left" Text="사용할 NPU" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                        <Border DockPanel.Dock="Left" Style="{StaticResource Seg.Frame}" VerticalAlignment="Center">
+                                            <StackPanel Orientation="Horizontal">
+                                                <RadioButton Style="{StaticResource Seg}" GroupName="boardNpu" Tag="first" Content="NPU 0" IsChecked="{Binding IsNpu0}" Height="30" Padding="12,0"/>
+                                                <RadioButton Style="{StaticResource Seg}" GroupName="boardNpu" Tag="last" Content="NPU 1" IsChecked="{Binding IsNpu1}" Height="30" Padding="12,0"/>
+                                            </StackPanel>
+                                        </Border>
+                                        <TextBlock DockPanel.Dock="Right" Text="{Binding SizeNote}" Style="{StaticResource Text.Caption}" VerticalAlignment="Center"/>
+                                    </DockPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <Border DockPanel.Dock="Top" Style="{StaticResource Callout.Danger}" Margin="0,12,0,0" Visibility="{Binding Error, Converter={StaticResource VisibleWhen}}">
+                                <TextBlock Text="{Binding Error}" Style="{StaticResource Callout.Text}"/>
+                            </Border>
+
+                            <Grid>
+                            <!-- pictures -->
+                            <Grid Margin="0,12,0,0" Visibility="{Binding IsPhotoMode, Converter={StaticResource VisibleWhen}}">
+                                <Grid Visibility="{Binding HasPhotos, Converter={StaticResource VisibleWhen}, ConverterParameter=invert}">
+                                    <Rectangle Style="{StaticResource Drop.Frame}"/>
+                                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <c:Icon Glyph="Photo" FontSize="30" Foreground="{StaticResource Brush.Text.Muted}"/>
+                                        <TextBlock Text="사진을 고르면 보드에서 바로 실행해요" Style="{StaticResource Text.Secondary}" HorizontalAlignment="Center" Margin="0,12,0,14"/>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                            <Button Style="{StaticResource Button.Primary}" Content="사진 고르기" Command="{Binding PickPhotosCommand}"/>
+                                            <Button Style="{StaticResource Button.Secondary}" Content="검사 사진으로" Command="{Binding UseTestPhotosCommand}" Margin="8,0,0,0"
+                                                    Visibility="{Binding CanUseTestPhotos, Converter={StaticResource VisibleWhen}}" ToolTip="프로젝트의 검사 사진 — PC 결과와 비교할 수 있어요"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Grid>
+                                <DockPanel Visibility="{Binding HasPhotos, Converter={StaticResource VisibleWhen}}">
+                                    <ScrollViewer DockPanel.Dock="Left" Width="84" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False" Padding="3,3,5,0" Margin="-3,-3,9,0">
+                                        <ItemsControl ItemsSource="{Binding Photos}" ItemTemplate="{StaticResource Board.Thumb}" Focusable="False" Width="76"/>
+                                    </ScrollViewer>
+                                    <Grid VerticalAlignment="Top" HorizontalAlignment="Left">
+                                        <c:DetectionView x:Name="PhotoView" Source="{Binding Picture}" Boxes="{Binding Boxes}" Caption="{Binding PictureTag}"/>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="10,0,0,10"
+                                                    Visibility="{Binding HudTime, Converter={StaticResource VisibleWhen}}">
+                                            <Border Style="{StaticResource Board.Hud}"><TextBlock Text="보드 결과" VerticalAlignment="Center"/></Border>
+                                            <Border Style="{StaticResource Board.Hud}"><TextBlock Text="{Binding HudTime}" VerticalAlignment="Center"/></Border>
+                                        </StackPanel>
+                                    </Grid>
+                                </DockPanel>
+                            </Grid>
+
+                            <!-- video -->
+                            <Grid Margin="0,12,0,0" Visibility="{Binding IsVideoMode, Converter={StaticResource VisibleWhen}}">
+                                <Grid Visibility="{Binding HasVideo, Converter={StaticResource VisibleWhen}, ConverterParameter=invert}">
+                                    <Rectangle Style="{StaticResource Drop.Frame}"/>
+                                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <c:Icon Glyph="Video" FontSize="30" Foreground="{StaticResource Brush.Text.Muted}"/>
+                                        <TextBlock Text="영상을 고르면 장면마다 보드에서 실행해요" Style="{StaticResource Text.Secondary}" HorizontalAlignment="Center" Margin="0,12,0,14"/>
+                                        <Button Style="{StaticResource Button.Primary}" Content="영상 고르기" Command="{Binding PickVideoCommand}" HorizontalAlignment="Center"/>
+                                    </StackPanel>
+                                </Grid>
+                                <DockPanel Visibility="{Binding HasVideo, Converter={StaticResource VisibleWhen}}">
+                                    <Border DockPanel.Dock="Top" Style="{StaticResource Card}" Padding="16,8" Margin="0,0,0,10">
+                                        <DockPanel LastChildFill="True">
+                                            <c:Icon DockPanel.Dock="Left" Glyph="Video" FontSize="20" Foreground="{StaticResource Brush.Brand.Primary}" Margin="0,0,14,0"/>
+                                            <Border DockPanel.Dock="Right" Style="{StaticResource Seg.Frame}" VerticalAlignment="Center">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <RadioButton Style="{StaticResource Seg}" GroupName="boardEvery" Tag="first" Content="모두" IsChecked="{Binding IsEveryAll}" Height="30" Padding="12,0"/>
+                                                    <RadioButton Style="{StaticResource Seg}" GroupName="boardEvery" Content="초당 10장" IsChecked="{Binding IsEvery10}" Height="30" Padding="12,0"/>
+                                                    <RadioButton Style="{StaticResource Seg}" GroupName="boardEvery" Tag="last" Content="초당 5장" IsChecked="{Binding IsEvery5}" Height="30" Padding="12,0"/>
+                                                </StackPanel>
+                                            </Border>
+                                            <TextBlock DockPanel.Dock="Right" Text="보낼 장면" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                            <StackPanel VerticalAlignment="Center" Margin="0,0,12,0">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="{Binding VideoTitle}" Style="{StaticResource Text.Label}" FontWeight="SemiBold" Foreground="{StaticResource Brush.Text.Heading}" TextTrimming="CharacterEllipsis" MaxWidth="220"/>
+                                                    <Button Style="{StaticResource Button.Link}" Content="바꾸기" FontSize="12" Margin="8,0,0,0" Command="{Binding PickVideoCommand}"/>
+                                                </StackPanel>
+                                                <TextBlock Text="{Binding VideoCaption}" Style="{StaticResource Text.Caption}" TextTrimming="CharacterEllipsis"/>
+                                            </StackPanel>
+                                        </DockPanel>
+                                    </Border>
+                                    <StackPanel MaxWidth="500" VerticalAlignment="Top">
+                                        <Grid>
+                                            <Border Background="#111111" CornerRadius="10" Height="281" Visibility="{Binding VideoFrame, Converter={StaticResource VisibleWhen}, ConverterParameter=invert}">
+                                                <TextBlock Text="실행하면 장면이 여기에 나와요" Foreground="#AEB4BE" FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <c:DetectionView Source="{Binding VideoFrame}" Boxes="{Binding VideoBoxes}" Caption="{Binding VideoTag}"
+                                                             Visibility="{Binding VideoFrame, Converter={StaticResource VisibleWhen}}"/>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="10,0,0,10"
+                                                        Visibility="{Binding HudFrame, Converter={StaticResource VisibleWhen}}">
+                                                <Border Style="{StaticResource Board.Hud}"><TextBlock Text="{Binding HudFrame}" VerticalAlignment="Center"/></Border>
+                                                <Border Style="{StaticResource Board.Hud}"><TextBlock Text="{Binding HudVideoTime}" VerticalAlignment="Center"/></Border>
+                                                <Border Style="{StaticResource Board.Hud}" Visibility="{Binding HudCount, Converter={StaticResource VisibleWhen}}"><TextBlock Text="{Binding HudCount}" VerticalAlignment="Center"/></Border>
+                                            </StackPanel>
+                                        </Grid>
+                                        <DockPanel Margin="0,8,0,0" LastChildFill="True">
+                                            <Button DockPanel.Dock="Left" Width="30" Height="30" Command="{Binding TogglePlayCommand}" Cursor="Hand" ToolTip="재생 / 멈춤">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border x:Name="b" CornerRadius="15" Background="{StaticResource Brush.Brand.Primary}">
+                                                            <c:Icon x:Name="i" Glyph="Play" FontSize="12" Foreground="White"/>
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <DataTrigger Binding="{Binding IsPlaying}" Value="True"><Setter TargetName="i" Property="Glyph" Value="Stop"/></DataTrigger>
+                                                            <Trigger Property="IsEnabled" Value="False"><Setter TargetName="b" Property="Opacity" Value="0.4"/></Trigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                            </Button>
+                                            <TextBlock DockPanel.Dock="Right" Text="{Binding PlayTimeText}" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="10,0,0,0" MinWidth="70" TextAlignment="Right"/>
+                                            <Grid VerticalAlignment="Center" Margin="10,0,0,0">
+                                                <ProgressBar Style="{StaticResource Progress.Pulse}" Value="{Binding ProgressFraction, Mode=OneWay}"
+                                                             Visibility="{Binding IsVideoRunning, Converter={StaticResource VisibleWhen}}"/>
+                                                <Slider Minimum="0" Maximum="{Binding FrameMax}" Value="{Binding FrameIndex}" IsSnapToTickEnabled="True" TickFrequency="1"
+                                                        Visibility="{Binding IsVideoDone, Converter={StaticResource VisibleWhen}}"/>
+                                            </Grid>
+                                        </DockPanel>
+                                    </StackPanel>
+                                </DockPanel>
+                            </Grid>
+                            </Grid>
+                        </DockPanel>
+
+                        <!-- right column: pictures -->
+                        <StackPanel Grid.Column="2" Visibility="{Binding IsPhotoMode, Converter={StaticResource VisibleWhen}}">
+                            <Border Style="{StaticResource Card}" Margin="0,0,0,12" Visibility="{Binding HasChecks, Converter={StaticResource VisibleWhen}}">
+                                <StackPanel>
+                                    <TextBlock Text="올리기 전 점검" Style="{StaticResource Text.Subtitle}" Margin="0,0,0,8"/>
+                                    <ItemsControl ItemsSource="{Binding Checks}" ItemTemplate="{StaticResource Board.Check}" Focusable="False"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource Card.Night}" Padding="16,14" CornerRadius="14" Margin="0,0,0,12" Visibility="{Binding HasAverage, Converter={StaticResource VisibleWhen}}">
+                                <StackPanel>
+                                    <TextBlock Text="보드 추론 시간 (평균)" Style="{StaticResource Text.Caption}" Foreground="{StaticResource Brush.Night.Caption}"/>
+                                    <DockPanel LastChildFill="False" Margin="0,4,0,0">
+                                        <TextBlock DockPanel.Dock="Left" FontFamily="{StaticResource Font.Brand}" FontSize="30" FontWeight="Bold" Foreground="White">
+                                            <Run Text="{Binding AverageText, Mode=OneWay}"/><Run Text=" ms" FontSize="13" FontWeight="SemiBold" Foreground="#AEB4BE"/>
+                                        </TextBlock>
+                                        <TextBlock DockPanel.Dock="Right" Text="{Binding PcEstimateText}" Style="{StaticResource Text.Caption}" Foreground="{StaticResource Brush.Night.Caption}" VerticalAlignment="Bottom" Margin="0,0,0,6"/>
+                                    </DockPanel>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource Card}" Margin="0,0,0,12" Visibility="{Binding HasCompare, Converter={StaticResource VisibleWhen}}">
+                                <StackPanel>
+                                    <DockPanel LastChildFill="False" Margin="0,0,0,8">
+                                        <TextBlock DockPanel.Dock="Left" Text="PC 결과와 비교" Style="{StaticResource Text.Subtitle}"/>
+                                        <c:Chip DockPanel.Dock="Right" Text="{Binding CompareChip}" Kind="{Binding CompareKind}" VerticalAlignment="Center"/>
+                                    </DockPanel>
+                                    <Border Background="{StaticResource Brush.Surface.TableHead}" CornerRadius="8" Padding="10,6">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="64"/>
+                                                <ColumnDefinition Width="64"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="클래스" Style="{StaticResource Table.Head}"/>
+                                            <TextBlock Grid.Column="1" Text="보드" Style="{StaticResource Table.Head}" TextAlignment="Right"/>
+                                            <TextBlock Grid.Column="2" Text="PC" Style="{StaticResource Table.Head}" TextAlignment="Right"/>
+                                        </Grid>
+                                    </Border>
+                                    <ItemsControl ItemsSource="{Binding CompareRows}" ItemTemplate="{StaticResource Board.Compare}" Focusable="False"/>
+                                </StackPanel>
+                            </Border>
+                            <Grid Visibility="{Binding HasPhotos, Converter={StaticResource VisibleWhen}}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Button Style="{StaticResource Button.Secondary}" Command="{Binding PickPhotosCommand}" HorizontalAlignment="Stretch">
+                                    <StackPanel Orientation="Horizontal">
+                                        <c:Icon Glyph="Add" FontSize="12"/>
+                                        <TextBlock Text="사진 더 넣기" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Grid.Column="2" Style="{StaticResource Button.Secondary}" Command="{Binding SavePhotosCommand}" HorizontalAlignment="Stretch">
+                                    <StackPanel Orientation="Horizontal">
+                                        <c:Icon Glyph="Download" FontSize="12"/>
+                                        <TextBlock Text="결과 저장" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+                            <Button Style="{StaticResource Button.Secondary}" Content="멈추기" Command="{Binding StopCommand}" Margin="0,8,0,0" HorizontalAlignment="Stretch"
+                                    Visibility="{Binding IsRunning, Converter={StaticResource VisibleWhen}}"/>
+                            <TextBlock Text="{Binding PhotoSaveText}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                        </StackPanel>
+
+                        <!-- right column: video -->
+                        <StackPanel Grid.Column="2" Visibility="{Binding IsVideoMode, Converter={StaticResource VisibleWhen}}">
+                            <Border Style="{StaticResource Card}" Margin="0,0,0,12" Visibility="{Binding HasVideo, Converter={StaticResource VisibleWhen}}">
+                                <StackPanel>
+                                    <DockPanel LastChildFill="False" Margin="0,0,0,10">
+                                        <TextBlock DockPanel.Dock="Left" Text="진행" Style="{StaticResource Text.Subtitle}"/>
+                                        <TextBlock DockPanel.Dock="Right" Text="{Binding ProgressText}" Style="{StaticResource Text.Caption}" VerticalAlignment="Center"/>
+                                    </DockPanel>
+                                    <ProgressBar Style="{StaticResource Progress.Pulse}" Value="{Binding ProgressFraction, Mode=OneWay}" Margin="0,0,0,12"/>
+                                    <StackPanel>
+                                        <DockPanel LastChildFill="False" Margin="0,0,0,7"><TextBlock DockPanel.Dock="Left" Text="처리 속도" Style="{StaticResource Text.Caption}" FontSize="13"/><TextBlock DockPanel.Dock="Right" Text="{Binding SpeedText}" Style="{StaticResource Text.Body}" FontSize="13" LineHeight="20"/></DockPanel>
+                                        <DockPanel LastChildFill="False" Margin="0,0,0,7"><TextBlock DockPanel.Dock="Left" Text="NPU 시간" Style="{StaticResource Text.Caption}" FontSize="13"/><TextBlock DockPanel.Dock="Right" Text="{Binding NpuAverageText}" Style="{StaticResource Text.Body}" FontSize="13" LineHeight="20"/></DockPanel>
+                                        <DockPanel LastChildFill="False" Margin="0,0,0,7"><TextBlock DockPanel.Dock="Left" Text="남은 시간" Style="{StaticResource Text.Caption}" FontSize="13"/><TextBlock DockPanel.Dock="Right" Text="{Binding RemainText}" Style="{StaticResource Text.Body}" FontSize="13" LineHeight="20"/></DockPanel>
+                                        <DockPanel LastChildFill="False"><TextBlock DockPanel.Dock="Left" Text="온도" Style="{StaticResource Text.Caption}" FontSize="13"/><TextBlock DockPanel.Dock="Right" Text="{Binding TemperatureText}" Style="{StaticResource Text.Body}" FontSize="13" LineHeight="20"/></DockPanel>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource Card}" Margin="0,0,0,12" Visibility="{Binding HasVideo, Converter={StaticResource VisibleWhen}}">
+                                <StackPanel>
+                                    <TextBlock Text="저장할 것" Style="{StaticResource Text.Subtitle}" Margin="0,0,0,10"/>
+                                    <CheckBox Style="{StaticResource Toggle}" IsChecked="{Binding SaveVideo}" Margin="0,0,0,8">
+                                        <TextBlock Text="상자를 그린 영상 (mp4)" FontSize="13"/>
+                                    </CheckBox>
+                                    <CheckBox Style="{StaticResource Toggle}" IsChecked="{Binding SaveCsv}">
+                                        <TextBlock Text="검출 결과 표 (CSV)" FontSize="13"/>
+                                    </CheckBox>
+                                </StackPanel>
+                            </Border>
+                            <Grid Visibility="{Binding HasVideo, Converter={StaticResource VisibleWhen}}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Button Style="{StaticResource Button.Primary}" Command="{Binding RunVideoCommand}" HorizontalAlignment="Stretch"
+                                        Visibility="{Binding IsVideoRunning, Converter={StaticResource VisibleWhen}, ConverterParameter=invert}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <c:Icon Glyph="Play" FontSize="12"/>
+                                        <TextBlock Text="실행" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Style="{StaticResource Button.Secondary}" Command="{Binding StopCommand}" HorizontalAlignment="Stretch"
+                                        Visibility="{Binding IsVideoRunning, Converter={StaticResource VisibleWhen}}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <c:Icon Glyph="Stop" FontSize="12"/>
+                                        <TextBlock Text="멈추기" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Grid.Column="2" Style="{StaticResource Button.Secondary}" Command="{Binding SaveVideoResultCommand}" HorizontalAlignment="Stretch">
+                                    <StackPanel Orientation="Horizontal">
+                                        <c:Icon Glyph="Download" FontSize="12"/>
+                                        <TextBlock Text="영상 저장" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+                            <TextBlock Text="{Binding VideoSaveText}" Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                        </StackPanel>
+                    </Grid>
+                </Grid>
+
+                <!-- =================================================== ⑤ manage -->
+                <Grid DataContext="{Binding Manage}" Visibility="{Binding DataContext.IsManageTab, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource VisibleWhen}}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="28"/>
+                        <ColumnDefinition Width="312"/>
+                    </Grid.ColumnDefinitions>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
+                        <StackPanel>
+                            <Border Style="{StaticResource Callout.Danger}" Margin="0,0,0,12" Visibility="{Binding Error, Converter={StaticResource VisibleWhen}}">
+                                <TextBlock Text="{Binding Error}" Style="{StaticResource Callout.Text}"/>
+                            </Border>
+                            <Border Style="{StaticResource Card}" Padding="16,14,16,6">
+                                <StackPanel>
+                                    <TextBlock Text="보드에 있는 모델" Style="{StaticResource Text.Subtitle}" Margin="0,0,0,4"/>
+                                    <ItemsControl ItemsSource="{Binding Models}" ItemTemplate="{StaticResource Board.ModelRow}" Focusable="False"/>
+                                    <TextBlock Text="{Binding ModelsText}" Style="{StaticResource Text.Caption}" Margin="0,8,0,8" Visibility="{Binding ModelsText, Converter={StaticResource VisibleWhen}}"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource Card}" Margin="0,12,0,0">
+                                <StackPanel>
+                                    <DockPanel LastChildFill="False">
+                                        <TextBlock DockPanel.Dock="Left" Text="보드에서 속도 재기" Style="{StaticResource Text.Subtitle}" VerticalAlignment="Center"/>
+                                        <Button DockPanel.Dock="Right" Style="{StaticResource Button.Primary}" Content="100번 재기" Command="{Binding BenchCommand}" Height="32" Padding="14,0"/>
+                                    </DockPanel>
+                                    <TextBlock Text="NPU만 100번 돌려 실제 추론 시간을 재요" Style="{StaticResource Text.Help}" Margin="0,2,0,6"/>
+                                    <ItemsControl ItemsSource="{Binding BenchRows}" ItemTemplate="{StaticResource Part.Fact}" Focusable="False"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+                    <StackPanel Grid.Column="2">
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="오래 돌려 보기" Style="{StaticResource Text.Subtitle}"/>
+                                <TextBlock Text="계속 돌리며 온도와 속도를 기록해요" Style="{StaticResource Text.Help}" Margin="0,2,0,10"/>
+                                <DockPanel LastChildFill="True">
+                                    <Button DockPanel.Dock="Right" Style="{StaticResource Button.Secondary}" Content="시작" Command="{Binding StartSoakCommand}" Margin="8,0,0,0"
+                                            Visibility="{Binding IsSoaking, Converter={StaticResource VisibleWhen}, ConverterParameter=invert}"/>
+                                    <Button DockPanel.Dock="Right" Style="{StaticResource Button.Secondary}" Content="멈추기" Command="{Binding StopSoakCommand}" Margin="8,0,0,0"
+                                            Visibility="{Binding IsSoaking, Converter={StaticResource VisibleWhen}}"/>
+                                    <ComboBox Style="{StaticResource Select}" ItemsSource="{Binding SoakChoices}" SelectedIndex="{Binding SoakChoice}" IsEnabled="{Binding IsSoaking, Converter={StaticResource Not}}"/>
+                                </DockPanel>
+                                <StackPanel Margin="0,10,0,0" Visibility="{Binding IsSoaking, Converter={StaticResource VisibleWhen}}">
+                                    <ProgressBar Style="{StaticResource Progress.Pulse}" Value="{Binding SoakFraction, Mode=OneWay}"/>
+                                    <TextBlock Text="{Binding SoakText}" Style="{StaticResource Text.Caption}" Margin="0,6,0,0" TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <StackPanel Margin="0,10,0,0" Visibility="{Binding SoakResult, Converter={StaticResource VisibleWhen}}">
+                                    <TextBlock Text="{Binding SoakResult}" Style="{StaticResource Text.Body}" FontSize="13" LineHeight="20" TextWrapping="Wrap"/>
+                                    <Button Style="{StaticResource Button.Link}" Content="기록 저장 →" Command="{Binding SaveSoakCommand}" HorizontalAlignment="Left" Margin="0,4,0,0"
+                                            Visibility="{Binding HasSoakLog, Converter={StaticResource VisibleWhen}}"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource Card}" Margin="0,12,0,0">
+                            <StackPanel>
+                                <TextBlock Text="보드 정리" Style="{StaticResource Text.Subtitle}" Margin="0,0,0,10"/>
+                                <DockPanel LastChildFill="True" Margin="0,0,0,8">
+                                    <Button DockPanel.Dock="Right" Style="{StaticResource Button.Quiet.Small}" Content="지우기" Command="{Binding CleanTempCommand}"/>
+                                    <TextBlock DockPanel.Dock="Right" Text="{Binding CleanText}" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="앱이 쓴 임시 파일" Style="{StaticResource Text.Body}" FontSize="13" VerticalAlignment="Center"/>
+                                </DockPanel>
+                                <DockPanel LastChildFill="True">
+                                    <Button DockPanel.Dock="Right" Style="{StaticResource Button.Quiet.Small}" Content="다시 시작" Command="{Binding RebootCommand}"/>
+                                    <TextBlock Text="보드 다시 시작" Style="{StaticResource Text.Body}" FontSize="13" VerticalAlignment="Center"/>
+                                </DockPanel>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Grid>
+            </Grid>
+        </DockPanel>
+    </Grid>
+</UserControl>

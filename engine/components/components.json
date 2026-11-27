@@ -1,0 +1,162 @@
+{
+  "schema": 1,
+  "about": "What TOPST Toolkit installs on the user's PC when the user asks for it (docs/design.md D12). Every file comes from its official source and is checked against the SHA-256 here before it is used. The app and the CLI (TopstToolkit.Cli install) read this file; build/build-runtime.ps1 and build/build-toolchain.ps1 did the same steps before.",
+  "components": [
+    {
+      "id": "engine",
+      "folder": "runtime",
+      "title": "엔진",
+      "summary": "모델을 변환 · 양자화 · 컴파일하는 TOPST AI-G NPU Toolkit(ENLIGHT SDK 0.9.9)과 그것이 쓰는 Python 3.8 · PyTorch 등",
+      "required": true,
+      "installedBytes": 686900000,
+      "downloads": [
+        {
+          "id": "python",
+          "name": "Python 3.8.10 (embeddable, 64-bit)",
+          "url": "https://www.python.org/ftp/python/3.8.10/python-3.8.10-embed-amd64.zip",
+          "sha256": "abbe314e9b41603dde0a823b76f5bbbe17b3de3e5ac4ef06b759da5466711271",
+          "bytes": 8211403,
+          "license": "PSF-2.0",
+          "licenseUrl": "https://docs.python.org/3.8/license.html"
+        },
+        {
+          "id": "pip",
+          "name": "pip 24.0",
+          "url": "https://files.pythonhosted.org/packages/py3/p/pip/pip-24.0-py3-none-any.whl",
+          "sha256": "ba0d021a166865d2265246961bec0152ff124de910c5cc39f1156ce3fa7c69dc",
+          "bytes": 2110226,
+          "license": "MIT",
+          "licenseUrl": "https://github.com/pypa/pip/blob/24.0/LICENSE.txt"
+        },
+        {
+          "id": "toolkit",
+          "name": "TOPST AI-G NPU Toolkit v1.0.0 (ENLIGHT SDK 0.9.9)",
+          "url": "https://topst-downloads.s3.ap-northeast-2.amazonaws.com/Education/Motrex/tc-nn-toolkit.zip",
+          "sha256": "e618c2c32e958b742fc8d7150a7cdbcaa9f9596d2e62cea723afc43aa0668cb7",
+          "bytes": 1295158733,
+          "license": "TOPST 이용 조건 (TOPST 플랫폼 전용, 재배포 금지)",
+          "licenseUrl": "https://topst.ai/tech/docs?page=Single+Board+Computer/G+Model/AI-G/Software/2.+TOPST+AI-G+NPU+toolkit.md"
+        }
+      ],
+      "packages": {
+        "lock": "runtime-requirements.lock.txt",
+        "bytes": 274545212,
+        "license": "패키지마다 다름 (BSD-3-Clause · MIT · Apache-2.0 · PSF 등, PyPI에서 받음)"
+      },
+      "extras": [
+        { "target": "extras/onnx", "lock": "extras-onnx.lock.txt", "bytes": 11466712, "license": "Apache-2.0" }
+      ],
+      "toolkit": {
+        "download": "toolkit",
+        "root": "tc-nn-toolkit/",
+        "copy": [
+          { "from": "EnlightSDK", "to": "toolkit/EnlightSDK", "excludeDirs": [ "enlight_obf", "__pycache__" ] },
+          { "from": "tools_sdk", "to": "toolkit/tools_sdk", "excludeDirs": [ "perf_srcs_bk", "perf_profiler", "__pycache__" ] },
+          { "from": "labels", "to": "toolkit/labels" },
+          { "from": "sample", "to": "toolkit/sample" },
+          { "from": "build_network", "to": "toolkit/build_network", "excludeDirs": [ "unit_test", "YOLOv3_example" ], "excludeFiles": [ "network.h", "post_process.c" ] },
+          { "from": "my_dataset_path", "to": "samples/calib-imagenet100" }
+        ],
+        "wheels": [ "enlight_viewer/netron-3.5.4-py2.py3-none-any.whl" ]
+      },
+      "prune": {
+        "roots": [ "python38/Lib/site-packages", "extras/onnx" ],
+        "files": [ "*.lib", "*.h", "*.hpp", "*.cuh" ],
+        "dirs": [ "include", "tests", "__pycache__" ],
+        "remove": [ "python38/Scripts", "extras/onnx/bin" ]
+      },
+      "requiredFiles": [
+        "python38/python.exe",
+        "toolkit/EnlightSDK/converter.py",
+        "toolkit/EnlightSDK/enlight/code_emission/cfg/hw_config.py",
+        "toolkit/tools_sdk/perf_sim/perf_simulator.py",
+        "toolkit/sample/dog.png",
+        "samples/calib-imagenet100"
+      ]
+    },
+    {
+      "id": "board-tools",
+      "folder": "toolchain",
+      "title": "보드 도구",
+      "summary": "보드용 라이브러리(net.so)를 만드는 Arm 크로스 컴파일러 (net.so를 만드는 데 쓰는 파일만)",
+      "required": true,
+      "installedBytes": 285000000,
+      "downloads": [
+        {
+          "id": "toolchain",
+          "name": "Arm GNU-A 9.2-2019.12 (aarch64-none-linux-gnu, Windows용)",
+          "url": "https://developer.arm.com/-/media/Files/downloads/gnu-a/9.2-2019.12/binrel/gcc-arm-9.2-2019.12-mingw-w64-i686-aarch64-none-linux-gnu.tar.xz",
+          "sha256": "290fb2a6777267e64e5a2c32ad6e87129ad75804037c3ae60a0740876e4622d8",
+          "md5": "a004a0ab54d7e46ae8bab60297dcda3d",
+          "bytes": 353130172,
+          "license": "GPL-3.0 (GCC · binutils), LGPL-2.1 (glibc) — 소스는 Arm이 배포",
+          "licenseUrl": "https://developer.arm.com/downloads/-/gnu-a"
+        }
+      ],
+      "archive": {
+        "download": "toolchain",
+        "root": "gcc-arm-9.2-2019.12-mingw-w64-i686-aarch64-none-linux-gnu",
+        "members": [
+          "bin/aarch64-none-linux-gnu-gcc-9.2.1.exe",
+          "libexec/gcc/aarch64-none-linux-gnu/9.2.1/cc1.exe",
+          "libexec/gcc/aarch64-none-linux-gnu/9.2.1/collect2.exe",
+          "libexec/gcc/aarch64-none-linux-gnu/9.2.1/liblto_plugin-0.dll",
+          "aarch64-none-linux-gnu/bin/as.exe",
+          "aarch64-none-linux-gnu/bin/ld.bfd.exe",
+          "lib/gcc/aarch64-none-linux-gnu/9.2.1/include/*",
+          "lib/gcc/aarch64-none-linux-gnu/9.2.1/include-fixed/*",
+          "lib/gcc/aarch64-none-linux-gnu/9.2.1/crtbeginS.o",
+          "lib/gcc/aarch64-none-linux-gnu/9.2.1/crtendS.o",
+          "lib/gcc/aarch64-none-linux-gnu/9.2.1/libgcc.a",
+          "aarch64-none-linux-gnu/lib64/libgcc_s.so",
+          "aarch64-none-linux-gnu/libc/usr/include/*",
+          "aarch64-none-linux-gnu/libc/usr/lib64/crti.o",
+          "aarch64-none-linux-gnu/libc/usr/lib64/crtn.o",
+          "aarch64-none-linux-gnu/libc/usr/lib64/libc.so",
+          "aarch64-none-linux-gnu/libc/usr/lib64/libc_nonshared.a",
+          "aarch64-none-linux-gnu/libc/lib64/libc.so.6",
+          "aarch64-none-linux-gnu/libc/lib/ld-linux-aarch64.so.1",
+          "*manifest.txt"
+        ],
+        "renames": [
+          { "from": "bin/aarch64-none-linux-gnu-gcc-9.2.1.exe", "to": "bin/aarch64-none-linux-gnu-gcc.exe" },
+          { "from": "aarch64-none-linux-gnu/bin/ld.bfd.exe", "to": "aarch64-none-linux-gnu/bin/ld.exe" }
+        ]
+      },
+      "requiredFiles": [
+        "gcc-arm-9.2-2019.12-mingw-w64-i686-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-gcc.exe",
+        "gcc-arm-9.2-2019.12-mingw-w64-i686-aarch64-none-linux-gnu/libexec/gcc/aarch64-none-linux-gnu/9.2.1/cc1.exe",
+        "gcc-arm-9.2-2019.12-mingw-w64-i686-aarch64-none-linux-gnu/aarch64-none-linux-gnu/bin/as.exe",
+        "gcc-arm-9.2-2019.12-mingw-w64-i686-aarch64-none-linux-gnu/aarch64-none-linux-gnu/bin/ld.exe",
+        "gcc-arm-9.2-2019.12-mingw-w64-i686-aarch64-none-linux-gnu/aarch64-none-linux-gnu/libc/usr/include/stdio.h",
+        "gcc-arm-9.2-2019.12-mingw-w64-i686-aarch64-none-linux-gnu/aarch64-none-linux-gnu/libc/lib64/libc.so.6"
+      ]
+    },
+    {
+      "id": "zoo",
+      "folder": "zoo",
+      "title": "모델 모음",
+      "summary": "모델 모음의 모델을 ONNX로 내보내는 도구 (timm · Ultralytics · onnx · onnxslim)",
+      "required": false,
+      "setup": false,
+      "needs": "engine",
+      "installedBytes": 211000000,
+      "downloads": [],
+      "extras": [
+        { "target": "site", "lock": "zoo-site.lock.txt", "bytes": 76660159, "license": "패키지마다 다름 (PyPI에서 받음, Ultralytics는 AGPL-3.0)" }
+      ],
+      "prune": {
+        "roots": [ "site" ],
+        "files": [ "*.lib", "*.h", "*.hpp" ],
+        "dirs": [ "__pycache__" ],
+        "remove": [ "site/bin" ]
+      },
+      "requiredFiles": [
+        "site/timm/__init__.py",
+        "site/ultralytics/__init__.py",
+        "site/onnx/__init__.py",
+        "site/onnxslim/__init__.py"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>TopstToolkit</AssemblyName>
+    <RootNamespace>TopstToolkit.App</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- the TOPST symbol, 16-256 px; made by build\gen-app-icon.py (design-system §7). Windows takes it for the exe,
+         the taskbar and Alt+Tab; WPF uses the exe's icon for the window when Window.Icon is not set. -->
+    <ApplicationIcon>Assets\Brand\app.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TopstToolkit.Core\TopstToolkit.Core.csproj" />
+    <ProjectReference Include="..\TopstToolkit.Engine\TopstToolkit.Engine.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Pretendard, Source Sans 3 and D2Coding ship inside the app (SIL OFL); never installed on the user's PC. -->
+    <Resource Include="Assets\Fonts\*.otf" />
+    <Resource Include="Assets\Fonts\*.ttf" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\TopstToolkit.Engine\TopstToolkit.Engine.csproj" />
+    <InternalsVisibleTo Include="TopstToolkit.Engine.Tests" />
+    <!-- where the app looks for update.json (Updates\UpdateSource, design §7.5); set in Directory.Build.props -->
+    <AssemblyMetadata Include="TopstUpdateUrl" Value="$(TopstUpdateUrl)" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>

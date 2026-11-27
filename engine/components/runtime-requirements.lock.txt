@@ -1,0 +1,44 @@
+# Engine runtime packages for CPython 3.8.10 (win_amd64).
+# Exact set verified on 2026-11-20 (feature/09): requirements.txt of the AI-G NPU Toolkit
+# + torch/torchvision (PyPI Windows wheels are the CPU builds) + the build dependencies pip pulled in.
+# Installed with --only-binary=:all: --no-deps, so this file must stay complete.
+# opencv-python 4.3.0.36 is marked "yanked" on PyPI (deprecated, use 4.3.0.38). It is the toolkit's pin and the
+# verified version; pip prints a warning and installs it.
+# Every line carries the SHA-256 of the one wheel pip picks for CPython 3.8 win_amd64 (installed with
+# --require-hashes): the installer gets exactly the files verified on 2026-11-20, or stops.
+certifi==2022.6.15 --hash=sha256:fe86415d55e84719d75f8b69414f6438ac3547d2078ab91b67e779ef69378412
+charset-normalizer==2.1.0 --hash=sha256:5189b6f22b01957427f35b6a08d9a0bc45b46d3788ef5a92e978433c7a35f8a5
+cycler==0.11.0 --hash=sha256:3a27e95f763a428a739d2add979fa7494c912a32c17c4c38c4d5f082cad165a3
+distro==1.7.0 --hash=sha256:d596311d707e692c2160c37807f83e3820c5d539d5a83e87cfb6babd8ba3a06b
+flatbuffers==1.11 --hash=sha256:776a959c5f70b41819fa75de44ed14fd984fa1a79b378f27e6f4fff338cbdca2
+fonttools==4.34.4 --hash=sha256:d73f25b283cd8033367451122aa868a23de0734757a01984e4b30b18b9050c72
+idna==3.3 --hash=sha256:84d9dd047ffa80596e0f246e2eab0b391788b0503584e8945f2368256d2735ff
+kiwisolver==1.4.3 --hash=sha256:7118ca592d25b2957ff7b662bc0fe4f4c2b5d5b27814b9b1bc9f2fb249a970e7
+matplotlib==3.5.2 --hash=sha256:75c406c527a3aa07638689586343f4b344fcc7ab1f79c396699eb550cd2b91f7
+networkx==2.8.4 --hash=sha256:6933b9b3174a0bdf03c911bb4a1ee43a86ce3edeb813e37e1d4c553b3f4a2c4f
+numpy==1.23.1 --hash=sha256:37e5ebebb0eb54c5b4a9b04e6f3018e16b8ef257d26c8945925ba8105008e645
+opencv-python==4.3.0.36 --hash=sha256:1ea08f22246ccd33174d59edfa3f13930bf2c28096568242090bd9d8770fb8a8
+packaging==21.3 --hash=sha256:ef103e05f519cdc783ae24ea4e2e0f508a9c99b2d4969652eed6a2e1ea5bd522
+pandas==1.4.3 --hash=sha256:605d572126eb4ab2eadf5c59d5d69f0608df2bf7bcad5c5880a47a20a0699e3e
+pexpect==4.8.0 --hash=sha256:0b48a55dcb3c05f3329815901ea4fc1537514d6ba867a152b581d69ae3710937
+Pillow==7.2.0 --hash=sha256:a060cf8aa332052df2158e5a119303965be92c3da6f2d93b6878f0ebca80b2f6
+protobuf==3.12.2 --hash=sha256:a96f8fc625e9ff568838e556f6f6ae8eca8b4837cdfb3f90efcb7c00e342a2eb
+ptyprocess==0.7.0 --hash=sha256:4b41f3967fce3af57cc7e94b888626c18bf37a083e3651ca8feeb66d492fef35
+pycocotools==2.0.7 --hash=sha256:625388f52e543f6f798f75f1ec125fe519580f22e72ccbd75eee0355ce336e18
+pydot==1.4.2 --hash=sha256:66c98190c65b8d2e2382a441b4c0edfdb4f4c025ef9cb9874de478fb0793a451
+pyparsing==3.0.9 --hash=sha256:5026bae9a10eeaefb61dab2f09052b9f4307d44aee4eda64b309723d8d206bbc
+python-dateutil==2.8.2 --hash=sha256:961d03dc3453ebbc59dbdea9e4e11c5651520a876d0f4db161e8674aae935da9
+pytz==2022.1 --hash=sha256:e68985985296d9a66a881eb3193b0906246245294a881e7c8afe623866ac6a5c
+PyYAML==6.0 --hash=sha256:1e4747bc279b4f613a09eb64bba2ba602d8a6664c6ce6396a4d0cd413a50ce07
+requests==2.28.1 --hash=sha256:8fefa2a1a1365bf5520aac41836fbee479da67864514bdb821f31ce07ce65349
+scikit-build==0.15.0 --hash=sha256:14ae341652ac42eabd1e830bccfec9b2551a4d9c34329a5580591fdeb86b23a4
+scipy==1.8.1 --hash=sha256:70ebc84134cf0c504ce6a5f12d6db92cb2a8a53a49437a6bb4edca0bc101f11c
+setuptools==75.3.4 --hash=sha256:2dd50a7f42dddfa1d02a36f275dbe716f38ed250224f609d35fb60a09593d93e
+six==1.16.0 --hash=sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254
+tabulate==0.8.10 --hash=sha256:0ba055423dbaa164b9e456abe7920c5e8ed33fcc16f6d1b2f2d152c8e1e8b4fc
+tensorboardX==2.5.1 --hash=sha256:8808133ccca673cd04076f6f2a85cf2d39bb2d0393a0f20d0f9cbb06d472b57e
+torch==1.12.0 --hash=sha256:7ddb167827170c4e3ff6a27157414a00b9fef93dea175da04caf92a0619b7aee
+torchvision==0.13.0 --hash=sha256:1e2049f1207631d42d743205f663f1d2235796565be3f18b0339d479626faf30
+typing_extensions==4.3.0 --hash=sha256:25642c956049920a5aa49edcdd6ab1e06d7e5d467fc00e0506c44ac86fbfca02
+urllib3==1.26.10 --hash=sha256:8298d6d56d39be0e3bc13c1c97d133f9b45d797169a0e11cdd0e0489d786f7ec
+wheel==0.45.1 --hash=sha256:708e7481cc80179af0e556bbf0cc00b8444c7321e2700b8d8580231d13017248

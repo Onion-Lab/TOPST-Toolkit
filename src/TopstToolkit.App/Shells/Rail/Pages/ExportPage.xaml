@@ -1,0 +1,140 @@
+<UserControl x:Class="TopstToolkit.App.Shells.Rail.Pages.ExportPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:TopstToolkit.App.Controls"
+             xmlns:vm="clr-namespace:TopstToolkit.App.ViewModels">
+    <!-- Step 7 "내보내기" in layout A. DataContext: ExportViewModel. -->
+    <DockPanel Margin="32,22,32,20">
+        <DockPanel DockPanel.Dock="Top" LastChildFill="False" Margin="0,0,0,16">
+            <TextBlock DockPanel.Dock="Left" Text="7 내보내기" Style="{StaticResource Page.Title}"/>
+            <c:Chip DockPanel.Dock="Left" Text="내보냄" Kind="Ok" Margin="10,0,0,0" Visibility="{Binding HasResult, Converter={StaticResource VisibleWhen}}"/>
+            <TextBlock DockPanel.Dock="Right" Text="보드에 복사할 폴더와 안내 문서를 만듭니다" Style="{StaticResource Page.Note}"/>
+        </DockPanel>
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="28"/>
+                <ColumnDefinition Width="312"/>
+            </Grid.ColumnDefinitions>
+
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False" Margin="-3,-3,-13,0" Padding="3,3,13,0">
+                <StackPanel>
+                    <Border Style="{StaticResource Callout.Warning}" Margin="0,0,0,16" Visibility="{Binding Problem, Converter={StaticResource VisibleWhen}}">
+                        <DockPanel LastChildFill="False">
+                            <c:Icon DockPanel.Dock="Left" Glyph="Warning" FontSize="16" Foreground="{StaticResource Brush.Status.Warning}" Margin="0,0,10,0"/>
+                            <TextBlock DockPanel.Dock="Left" Text="{Binding Problem}" Style="{StaticResource Callout.Text}" VerticalAlignment="Center"/>
+                            <Button DockPanel.Dock="Right" Style="{StaticResource Button.Link}" Content="4 빌드로 가기 →" Command="{Binding GoToBuildCommand}" VerticalAlignment="Center"/>
+                        </DockPanel>
+                    </Border>
+
+                    <TextBlock Text="내보낼 위치" Style="{StaticResource Text.Field}"/>
+                    <Border Height="36" BorderBrush="{StaticResource Brush.Border.Default}" BorderThickness="1" CornerRadius="8" Background="White">
+                        <DockPanel Margin="12,0,4,0" LastChildFill="True">
+                            <c:Icon DockPanel.Dock="Left" Glyph="Folder" FontSize="14" Foreground="{StaticResource Brush.Text.Muted}" Margin="0,0,8,0"/>
+                            <Button DockPanel.Dock="Right" Style="{StaticResource Button.Quiet.Small}" Content="바꾸기" Command="{Binding PickDestinationCommand}" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding Destination}" Style="{StaticResource Text.Mono}" VerticalAlignment="Center" ToolTip="{Binding Destination}"/>
+                        </DockPanel>
+                    </Border>
+                    <TextBlock Text="이 안에 프로젝트 이름으로 폴더를 만듭니다. 한글이나 공백이 있는 위치도 괜찮습니다." Style="{StaticResource Text.Help}"/>
+
+                    <TextBlock Text="들어가는 것" Style="{StaticResource Text.Field}" Margin="0,16,0,6"/>
+                    <Border Style="{StaticResource Card}" Padding="16,10">
+                        <StackPanel>
+                            <ItemsControl ItemsSource="{Binding Contents}" Focusable="False">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type vm:FactRow}">
+                                        <Grid Margin="0,4">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="208"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{Binding Label}" Style="{StaticResource Text.Mono}" xml:space="preserve"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding Value}" Style="{StaticResource Text.Secondary}" FontSize="13" LineHeight="19"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <Border Style="{StaticResource Divider}" Margin="0,8"/>
+                            <CheckBox Style="{StaticResource Check}" IsChecked="{Binding IncludeRuntime}" Margin="0,4">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="runtime\" Style="{StaticResource Text.Mono}" Width="184"/>
+                                    <TextBlock Text="net.so의 C 소스 (직접 다시 빌드할 때)" Style="{StaticResource Text.Secondary}" FontSize="13" LineHeight="19"/>
+                                </StackPanel>
+                            </CheckBox>
+                            <CheckBox Style="{StaticResource Check}" IsChecked="{Binding IncludeProject}" Margin="0,4">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="project.json" Style="{StaticResource Text.Mono}" Width="184"/>
+                                    <TextBlock Text="이 결과를 다시 만들 수 있는 설정" Style="{StaticResource Text.Secondary}" FontSize="13" LineHeight="19"/>
+                                </StackPanel>
+                            </CheckBox>
+                            <CheckBox Style="{StaticResource Check}" IsChecked="{Binding MakeZip}" Margin="0,4">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text=".zip" Style="{StaticResource Text.Mono}" Width="184"/>
+                                    <TextBlock Text="폴더와 함께 압축 파일도 만들기" Style="{StaticResource Text.Secondary}" FontSize="13" LineHeight="19"/>
+                                </StackPanel>
+                            </CheckBox>
+                        </StackPanel>
+                    </Border>
+
+                    <DockPanel LastChildFill="False" Margin="0,16,0,0">
+                        <Button DockPanel.Dock="Left" Style="{StaticResource Button.Primary}" Command="{Binding ExportCommand}" IsEnabled="{Binding CanExport}">
+                            <StackPanel Orientation="Horizontal">
+                                <c:Icon Glyph="Package" FontSize="14"/>
+                                <TextBlock Text="내보내기" Margin="7,0,0,0" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <TextBlock DockPanel.Dock="Left" Text="파일을 복사하는 중입니다" Style="{StaticResource Text.Secondary}" Margin="12,0,0,0" VerticalAlignment="Center"
+                                   Visibility="{Binding IsBusy, Converter={StaticResource VisibleWhen}}"/>
+                    </DockPanel>
+
+                    <Border Style="{StaticResource Callout.Danger}" Margin="0,12,0,0" Visibility="{Binding Error, Converter={StaticResource VisibleWhen}}">
+                        <TextBlock Text="{Binding Error}" Style="{StaticResource Callout.Text}"/>
+                    </Border>
+
+                    <!-- done -->
+                    <Border Style="{StaticResource Card}" Margin="0,16,0,0" Visibility="{Binding HasResult, Converter={StaticResource VisibleWhen}}">
+                        <StackPanel>
+                            <DockPanel LastChildFill="False" Margin="0,0,0,6">
+                                <TextBlock DockPanel.Dock="Left" Text="내보냈습니다" Style="{StaticResource Text.Subtitle}"/>
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding ResultSummary}" Style="{StaticResource Text.Caption}" VerticalAlignment="Center"/>
+                            </DockPanel>
+                            <TextBlock Text="{Binding ResultPath}" Style="{StaticResource Text.Mono}" ToolTip="{Binding ResultPath}" Margin="0,0,0,8"/>
+                            <ItemsControl ItemsSource="{Binding ResultFacts}" ItemTemplate="{StaticResource Part.Fact}" Focusable="False"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                                <Button Style="{StaticResource Button.Secondary}" Content="폴더 열기" Command="{Binding OpenFolderCommand}"/>
+                                <Button Style="{StaticResource Button.Secondary}" Content="README 열기" Command="{Binding OpenReadmeCommand}" Margin="8,0,0,0"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+
+            <StackPanel Grid.Column="2">
+                <Border Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Text="보드에서 실행하기" Style="{StaticResource Text.Subtitle}" Margin="0,0,0,8"/>
+                        <Border Background="{StaticResource Brush.Log.Background}" CornerRadius="8" Padding="12,10">
+                            <TextBlock Text="{Binding BoardCommands}" FontFamily="{StaticResource Font.Mono}" FontSize="11.5" Foreground="{StaticResource Brush.Log.Text}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
+                                       LineStackingStrategy="BlockLineHeight" LineHeight="19"/>
+                        </Border>
+                        <TextBlock Text="폴더를 통째로 보드에 복사한 뒤 실행합니다. 같은 내용이 README에도 들어갑니다." Style="{StaticResource Text.Help}"/>
+                        <Border Style="{StaticResource Callout.Warning}" Margin="0,10,0,0" Visibility="{Binding HasNetSo, Converter={StaticResource VisibleWhen}, ConverterParameter=invert}">
+                            <TextBlock Text="net.so가 없어요. 보드에서 모델을 쓰려면 필요합니다. README에 직접 만드는 방법을 적어 둡니다." Style="{StaticResource Callout.Text}"/>
+                        </Border>
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Card.Flat}" Margin="0,12,0,0">
+                    <StackPanel>
+                        <TextBlock Text="문제가 생겼나요?" Style="{StaticResource Text.BodyStrong}"/>
+                        <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="0,4,0,10"
+                                   Text="진단 패키지에는 설정과 실행 기록(로그)이 들어갑니다. 모델 파일과 사진은 넣지 않습니다. 로그에는 폴더 경로가 들어 있습니다."/>
+                        <Button Style="{StaticResource Button.Secondary}" Content="진단 패키지 만들기" Command="{Binding MakeDiagnosticsCommand}" HorizontalAlignment="Left"/>
+                        <TextBlock Text="{Binding DiagnosticsPath}" Style="{StaticResource Text.Mono}" TextWrapping="Wrap" Margin="0,8,0,0"
+                                   Visibility="{Binding DiagnosticsPath, Converter={StaticResource VisibleWhen}}"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </Grid>
+    </DockPanel>
+</UserControl>

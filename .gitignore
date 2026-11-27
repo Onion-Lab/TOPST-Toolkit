@@ -1,0 +1,22 @@
+# build outputs
+bin/
+obj/
+artifacts/
+TestResults/
+*.user
+*.suo
+.vs/
+.vscode/
+
+# local scratch
+*.log
+
+# Python caches (the helper and zoo scripts leave them next to themselves)
+__pycache__/
+*.pyc
+
+# keys and certificates never go in the repository
+*.pem
+*.key
+*.pfx
+*.p12

@@ -1,0 +1,3 @@
+# onnx for TOPST Toolkit's own helpers, installed into extras\onnx (off the toolkit's sys.path: the SDK ships its own
+# onnx_pb2 and protobuf refuses both in one process). Its dependencies come from the engine's site-packages.
+onnx==1.12.0 --hash=sha256:f66d2996e65f490a57b3ae952e4e9189b53cc9fe3f75e601d50d4db2dc1b1cd9

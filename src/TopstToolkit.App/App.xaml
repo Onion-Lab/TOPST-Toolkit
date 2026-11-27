@@ -1,0 +1,26 @@
+<Application x:Class="TopstToolkit.App.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:TopstToolkit.App.Controls"
+             ShutdownMode="OnMainWindowClose">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Themes/Tokens.xaml"/>
+                <ResourceDictionary Source="Themes/Brand.xaml"/>
+                <ResourceDictionary Source="Themes/Controls.xaml"/>
+                <ResourceDictionary Source="Themes/Inputs.xaml"/>
+                <ResourceDictionary Source="Themes/Parts.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <c:VisibleWhen x:Key="VisibleWhen"/>
+            <c:Not x:Key="Not"/>
+            <!-- Korean words stay whole when text wraps (c:KeepWords), also for TextBlocks without a text style and for Runs -->
+            <Style TargetType="TextBlock">
+                <Setter Property="c:KeepWords.Text" Value="{Binding Text, RelativeSource={RelativeSource Self}}"/>
+            </Style>
+            <Style TargetType="Run">
+                <Setter Property="c:KeepWords.Text" Value="{Binding Text, RelativeSource={RelativeSource Self}}"/>
+            </Style>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

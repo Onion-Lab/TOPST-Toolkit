@@ -1,0 +1,120 @@
+<UserControl x:Class="TopstToolkit.App.IntroView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             ClipToBounds="True" Cursor="Hand" Focusable="True" FocusVisualStyle="{x:Null}"
+             ToolTip="누르면 건너뜁니다">
+    <!-- The start-up animation (docs/mockups/mockup-intro.html, the first seconds of the topst.ai film): it covers the
+         window under the title bar for 3.2 s and fades into the app. The moments are set in code (IntroView.ShowFrame). -->
+    <Grid x:Name="Root">
+        <Grid.Background>
+            <RadialGradientBrush Center="0.5,0.46" GradientOrigin="0.5,0.46" RadiusX="0.7" RadiusY="0.75">
+                <GradientStop Color="#ADB2FF" Offset="0"/>
+                <GradientStop Color="#A3A9FE" Offset="0.55"/>
+                <GradientStop Color="#9AA0FB" Offset="1"/>
+            </RadialGradientBrush>
+        </Grid.Background>
+
+        <!-- the scene (flat squares, then the voxel clusters); it grows a little as the animation fades out -->
+        <Grid x:Name="Scene" RenderTransformOrigin="0.5,0.5">
+            <Grid.RenderTransform>
+                <ScaleTransform x:Name="SceneScale"/>
+            </Grid.RenderTransform>
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="46*"/>
+                    <RowDefinition Height="54*"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
+                <!-- (0, 0) is the centre of the scene: half the width, 46 % of the height -->
+                <Canvas x:Name="Tiles" Grid.Row="1" Grid.Column="1" Width="0" Height="0" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+            </Grid>
+            <Viewport3D x:Name="View" IsHitTestVisible="False" ClipToBounds="True">
+                <Viewport3D.Camera>
+                    <PerspectiveCamera x:Name="Camera" Position="0,0,1500" LookDirection="0,0,-1" UpDirection="0,1,0"
+                                       NearPlaneDistance="20" FarPlaneDistance="6000" FieldOfView="46.2"/>
+                </Viewport3D.Camera>
+                <ModelVisual3D>
+                    <ModelVisual3D.Content>
+                        <Model3DGroup x:Name="World">
+                            <!-- white ambient light only: every face shows its own colours, as in the mockup -->
+                            <AmbientLight Color="White"/>
+                        </Model3DGroup>
+                    </ModelVisual3D.Content>
+                </ModelVisual3D>
+            </Viewport3D>
+        </Grid>
+
+        <!-- "Begin Bold, Build Beyond." / "Begin Bold, Only For Device ?" — its middle on the scene's centre line -->
+        <Grid IsHitTestVisible="False">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="46*"/>
+                <RowDefinition Height="54*"/>
+            </Grid.RowDefinitions>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Bottom" Height="60" Margin="0,0,0,-30">
+                <StackPanel.Effect>
+                    <DropShadowEffect Color="#343896" Opacity="0.28" BlurRadius="18" ShadowDepth="2" Direction="270"/>
+                </StackPanel.Effect>
+                <TextBlock x:Name="Lead" Text="Begin Bold,&#160;" Style="{x:Null}" FontFamily="{StaticResource Font.Brand}" FontSize="46" FontWeight="Bold"
+                           Foreground="White" VerticalAlignment="Center">
+                    <TextBlock.RenderTransform><TranslateTransform x:Name="LeadMove"/></TextBlock.RenderTransform>
+                </TextBlock>
+                <Grid VerticalAlignment="Center">
+                    <TextBlock x:Name="One" Text="Build Beyond." Style="{x:Null}" FontFamily="{StaticResource Font.Brand}" FontSize="46" FontWeight="Bold"
+                               Foreground="#B7F4E8">
+                        <TextBlock.RenderTransform><TranslateTransform x:Name="OneMove"/></TextBlock.RenderTransform>
+                    </TextBlock>
+                    <TextBlock x:Name="Two" Text="Only For Device ?" Style="{x:Null}" FontFamily="{StaticResource Font.Brand}" FontSize="46" FontWeight="Bold"
+                               Foreground="White">
+                        <TextBlock.RenderTransform><TranslateTransform x:Name="TwoMove"/></TextBlock.RenderTransform>
+                    </TextBlock>
+                </Grid>
+            </StackPanel>
+        </Grid>
+
+        <!-- the TOPST mark under it, as in the film -->
+        <StackPanel x:Name="Mark" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,44" IsHitTestVisible="False">
+            <Viewbox Width="16" Height="16" VerticalAlignment="Center">
+                <Canvas Width="48.6" Height="48.6">
+                    <Path Canvas.Top="0.84" Data="{StaticResource Brand.TopstSymbol}" Fill="{StaticResource Brush.Topst.SymbolPulse}"/>
+                </Canvas>
+            </Viewbox>
+            <Viewbox Height="10.5" Margin="8,0,0,0" VerticalAlignment="Center">
+                <Canvas Width="141.2" Height="25">
+                    <Path Canvas.Left="-59" Canvas.Top="-20" Data="{StaticResource Brand.TopstWord}" Fill="White"/>
+                </Canvas>
+            </Viewbox>
+        </StackPanel>
+
+        <!-- the dark start and the light that opens it -->
+        <Rectangle x:Name="Dark" Fill="#05060A" IsHitTestVisible="False"/>
+        <Grid IsHitTestVisible="False">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="46*"/>
+                <RowDefinition Height="54*"/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+            <Canvas Grid.Row="1" Grid.Column="1" Width="0" Height="0" HorizontalAlignment="Left" VerticalAlignment="Top">
+                <Ellipse x:Name="Bloom" Width="900" Height="900" Canvas.Left="-450" Canvas.Top="-450" RenderTransformOrigin="0.5,0.5">
+                    <Ellipse.RenderTransform>
+                        <ScaleTransform x:Name="BloomScale"/>
+                    </Ellipse.RenderTransform>
+                    <Ellipse.Fill>
+                        <!-- CSS "circle" reaches the far corner of the 900 px box: radius 636 px = 0.707 of it -->
+                        <RadialGradientBrush RadiusX="0.707" RadiusY="0.707">
+                            <GradientStop Color="#FFFFFFFF" Offset="0"/>
+                            <GradientStop Color="#D9ECEEFF" Offset="0.18"/>
+                            <GradientStop Color="#59BEC4FF" Offset="0.42"/>
+                            <GradientStop Color="#00A0A6FE" Offset="0.66"/>
+                        </RadialGradientBrush>
+                    </Ellipse.Fill>
+                </Ellipse>
+            </Canvas>
+        </Grid>
+    </Grid>
+</UserControl>
