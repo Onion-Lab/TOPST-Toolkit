@@ -10,8 +10,8 @@
     <Copyright>© Telechips Inc.</Copyright>
     <Version>0.1.0</Version>
     <NeutralLanguage>ko-KR</NeutralLanguage>
-    <!-- The address where the app looks for update.json and update.json.sig (design §7.5), ending in "/", e.g.
-         https://github.com/<owner>/<repo>/releases/latest/download/ . Empty: the app has no update screens. -->
-    <TopstUpdateUrl></TopstUpdateUrl>
+    <!-- The address where the app looks for update.json and update.json.sig (design §7.5), ending in "/": the latest
+         release of this repository. Empty: the app has no update screens. -->
+    <TopstUpdateUrl>https://github.com/Onion-Lab/TOPST-Toolkit/releases/latest/download/</TopstUpdateUrl>
   </PropertyGroup>
 </Project>
