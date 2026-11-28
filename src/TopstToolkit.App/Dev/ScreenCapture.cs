@@ -799,6 +799,29 @@ internal static class ScreenCapture
             page.Run.UseProjectModelCommand.Execute(null);
         }
 
+        // the status tab after all of the above: the last minutes as graphs, with what ran (design §5.10 "지난 몇 분 그래프")
+        page.IsStatusTab = true;
+        await Task.Delay(TimeSpan.FromSeconds(2.5)); // one more status line after the last run
+        await Settle(shell);
+        Save(host, Shot("10e-status-graphs"));
+        if (page.CpuTrend is { Times.Count: > 20 } cpu)
+        {
+            page.HoverTime = cpu.Times[^16];         // the hairline half a minute back, on all four graphs
+            await Settle(shell);
+            Save(host, Shot("10f-status-hairline"));
+            page.HoverTime = null;
+        }
+        page.IsLastMinute = true;
+        await Settle(shell);
+        Save(host, Shot("10g-status-1min"));
+        page.IsLastFiveMinutes = true;
+        var history = shell.Board.History;
+        log.Add($"graphs: samples={history.Samples.Count} over {(history.Samples.Count > 1 ? history.Samples[^1].At - history.Samples[0].At : TimeSpan.Zero):m\\:ss} " +
+                $"runs=[{string.Join(" | ", history.Spans.Select(s => $"{s.Label} {((s.To ?? DateTimeOffset.Now) - s.From).TotalSeconds:0} s"))}] " +
+                $"now=[CPU {page.CpuNow} · NPU {page.Npu0Now} / {page.Npu1Now} · 메모리 {page.BoardMemoryNow} / {page.NpuMemoryNow} · 온도 {page.TemperatureNow}]");
+        await page.SaveHistoryCommand.ExecuteAsync(null);  // "기록 저장" into the saved folder next to the shots
+        log.Add($"saved history: [{page.HistorySaveText}]");
+
         shell.NavigateTo("result");
         await Settle(shell);
         Save(host, Shot("11-pill"));

@@ -150,7 +150,7 @@ public partial class BoardManageViewModel : ObservableObject
             return;
         IsBusy = true;
         Error = "";
-        Board.BeginRun();
+        Board.BeginRun(_page.Run.RunLabel("속도 재기"));
         _shell.BeginTask("보드에서 속도 재는 중", "100번");
         try
         {
@@ -220,7 +220,7 @@ public partial class BoardManageViewModel : ObservableObject
         HasSoakLog = false;
         SoakFraction = 0;
         SoakText = "시작하는 중…";
-        Board.BeginRun();
+        Board.BeginRun(_page.Run.RunLabel("오래 돌리기"));
         var startTemperature = Board.Status?.MaxTemperature;
         _shell.BeginTask("오래 돌려 보는 중", Clock(duration));
         try

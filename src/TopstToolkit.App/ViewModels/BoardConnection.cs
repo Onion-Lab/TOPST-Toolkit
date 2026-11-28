@@ -51,6 +51,9 @@ public partial class BoardConnection : ObservableObject
     /// <summary>Raised on the UI thread for every status line.</summary>
     public event EventHandler? StatusChanged;
 
+    /// <summary>The status lines of the last 15 minutes and what the app ran then (the graphs of 보드 › 상태).</summary>
+    public BoardHistory History { get; } = new();
+
     /// <summary>The runner that comes with the app: engine\board\topst_runner.py.</summary>
     public static string? RunnerScript()
     {
@@ -116,22 +119,28 @@ public partial class BoardConnection : ObservableObject
         _monitor = null;
         IsConnected = false;
         IsRunning = false;
+        History.EndSpan(DateTimeOffset.Now);
         if (monitor is not null)
             await monitor.DisposeAsync();
         StatusChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    /// <summary>Marks the NPU in use by the app (pill "실행 중") and remembers the temperature at the start.</summary>
-    public void BeginRun()
+    /// <summary>
+    /// Marks the NPU in use by the app (pill "실행 중"), remembers the temperature at the start, and marks the stretch
+    /// in the graphs of 보드 › 상태 with <paramref name="label"/> ("영상 · YOLOv8n").
+    /// </summary>
+    public void BeginRun(string label)
     {
         IsRunning = true;
         RunStartTemperature = Status?.MaxTemperature;
+        History.BeginSpan(label, DateTimeOffset.Now);
         StatusChanged?.Invoke(this, EventArgs.Empty);
     }
 
     public void EndRun()
     {
         IsRunning = false;
+        History.EndSpan(DateTimeOffset.Now);
         StatusChanged?.Invoke(this, EventArgs.Empty);
     }
 
@@ -140,6 +149,8 @@ public partial class BoardConnection : ObservableObject
         if (!ReferenceEquals(source, _monitor) && _monitor is not null)
             return;
         Status = status;
+        History.UseBoard(status.Host);
+        History.Add(status, DateTimeOffset.Now);
         StatusChanged?.Invoke(this, EventArgs.Empty);
     }
 
@@ -150,6 +161,7 @@ public partial class BoardConnection : ObservableObject
         _monitor = null;
         IsConnected = false;
         IsRunning = false;
+        History.EndSpan(DateTimeOffset.Now);
         LostText = error.Message;
         _ = source.DisposeAsync();
         StatusChanged?.Invoke(this, EventArgs.Empty);

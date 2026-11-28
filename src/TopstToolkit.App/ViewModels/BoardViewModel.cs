@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using TopstToolkit.App.Controls;
@@ -295,7 +296,10 @@ public partial class BoardViewModel : ObservableObject, IPageViewModel
         ChipKind = !Board.IsConnected ? ChipKind.Muted : Board.IsRunning ? ChipKind.Running : ChipKind.Ok;
         HeaderCaption = Board.IsConnected && Board.Target is { } t ? $"{Board.Name} · {t.Host}" : "";
         if (Board.Status is { } s && Board.IsConnected)
+        {
             ShowStatus(s);
+            ShowTrends();
+        }
         Run.OnBoardChanged();
     }
 
@@ -330,6 +334,127 @@ public partial class BoardViewModel : ObservableObject, IPageViewModel
     }
 
     private static string Num(double v) => Math.Round(v).ToString("0", CultureInfo.InvariantCulture);
+
+    // ---------------------------------------------------------------- the last minutes (design §5.10 "지난 몇 분 그래프")
+    // docs/mockups/mockup-board-graph.html, the user's choice of 2026-11-28 ("자세히 칸 그래프"): the two detail cards
+    // show the last 1 · 5 · 15 minutes as lines; the colours are the tiles' (NPU 1 violet, checked for colour blindness).
+    private static readonly Color CpuColor = Color.FromRgb(0x3D, 0x8A, 0xED);
+    private static readonly Color NpuColor = Color.FromRgb(0x18, 0xA0, 0x6B);
+    private static readonly Color SecondNpuColor = Color.FromRgb(0x62, 0x50, 0xD6);
+    private static readonly Color MemoryColor = Color.FromRgb(0x71, 0x84, 0xFD);
+    private static readonly Color HeatColor = Color.FromRgb(0xD9, 0x77, 0x06);
+
+    /// <summary>How far back the graphs look: 1, 5 or 15 minutes (the history keeps 15).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsLastMinute), nameof(IsLastFiveMinutes), nameof(IsLastFifteenMinutes))]
+    private int _windowMinutes = 5;
+
+    public bool IsLastMinute { get => WindowMinutes == 1; set { if (value) WindowMinutes = 1; } }
+    public bool IsLastFiveMinutes { get => WindowMinutes == 5; set { if (value) WindowMinutes = 5; } }
+    public bool IsLastFifteenMinutes { get => WindowMinutes == 15; set { if (value) WindowMinutes = 15; } }
+
+    partial void OnWindowMinutesChanged(int value) => ShowTrends();
+
+    [ObservableProperty] private TrendFrame? _cpuTrend;
+    [ObservableProperty] private TrendFrame? _npuTrend;
+    [ObservableProperty] private TrendFrame? _memoryTrend;
+    [ObservableProperty] private TrendFrame? _temperatureTrend;
+
+    /// <summary>The sample the pointer is at, shared by the four graphs (a hairline on each).</summary>
+    [ObservableProperty] private DateTimeOffset? _hoverTime;
+
+    [ObservableProperty] private string _cpuNow = "";
+    [ObservableProperty] private string _npu0Now = "";
+    [ObservableProperty] private string _npu1Now = "";
+    [ObservableProperty] private bool _hasSecondNpu;
+    [ObservableProperty] private string _boardMemoryNow = "";
+    [ObservableProperty] private string _npuMemoryNow = "";
+    [ObservableProperty] private string _temperatureNow = "";
+    [ObservableProperty] private string _historySaveText = "";
+
+    private void ShowTrends()
+    {
+        var samples = Board.History.Samples.ToArray();   // the history goes on; each frame keeps its own copy
+        if (samples.Length == 0)
+            return;
+        var spans = Board.History.Spans.ToArray();
+        var now = samples[^1].At;
+        var window = TimeSpan.FromMinutes(WindowMinutes);
+        var times = samples.Select(x => x.At).ToArray();
+        var bands = spans.Select(x => new TrendSpan(x.From, x.To ?? now, x.Label)).ToArray();
+        string? RunAt(int i) => spans.LastOrDefault(x => x.From <= times[i] && (x.To ?? DateTimeOffset.MaxValue) >= times[i])?.Label;
+        double[] Values(Func<BoardStatus, double> pick) => samples.Select(x => pick(x.Status)).ToArray();
+        TrendFrame Frame(TrendLine[] lines, double min, double max, string unit, Func<int, IReadOnlyList<TrendTipRow>> tip) =>
+            new(times, now, window, BoardHistory.Gap, lines, bands, min, max, unit, tip, RunAt);
+
+        CpuTrend = Frame([new TrendLine("전체", CpuColor, Values(x => x.CpuAll), Wash: true)], 0, 100, "",
+            i => [new TrendTipRow(Pct(samples[i].Status.CpuAll), "전체", CpuColor),
+                  .. samples[i].Status.Cpu.Select((c, k) => new TrendTipRow(Pct(c), $"코어 {k + 1}"))]);
+
+        var npus = Math.Max(1, samples.Max(x => x.Status.Npus.Length));
+        NpuTrend = Frame(
+            Enumerable.Range(0, npus).Select(n => new TrendLine($"NPU {n}", n == 0 ? NpuColor : SecondNpuColor,
+                Values(x => n < x.Npus.Length ? x.Npus[n].Busy : double.NaN))).ToArray(), 0, 100, "",
+            i => samples[i].Status.Npus.Select((n, k) => new TrendTipRow(Pct(n.Busy), $"NPU {k}", k == 0 ? NpuColor : SecondNpuColor)).ToArray());
+
+        MemoryTrend = Frame(
+            [new TrendLine("보드", MemoryColor, Values(x => x.MemoryUsedPercent)), new TrendLine("NPU용", NpuColor, Values(x => x.NpuMemory.UsedPercent))],
+            0, 100, "",
+            i => [new TrendTipRow(Pct(samples[i].Status.MemoryUsedPercent), $"보드 · {BoardAgent.Mb(samples[i].Status.Memory.Available)} 남음", MemoryColor),
+                  new TrendTipRow(Pct(samples[i].Status.NpuMemory.UsedPercent), $"NPU용 · {BoardAgent.Mb(samples[i].Status.NpuMemory.Free)} 남음", NpuColor)]);
+
+        var heat = Values(x => x.Temperatures.Length == 0 ? double.NaN : x.MaxTemperature);
+        var shown = heat.Where((v, i) => times[i] >= now - window && !double.IsNaN(v)).DefaultIfEmpty(45).ToArray();
+        var high = shown.Max() > 68 ? Math.Ceiling((shown.Max() + 2) / 10) * 10 : 70;
+        var low = shown.Min() < 32 ? Math.Floor((shown.Min() - 2) / 10) * 10 : 30;
+        TemperatureTrend = Frame([new TrendLine("가장 높은 값", HeatColor, heat, Wash: true)], low, high, "°", i => SensorRows(samples[i].Status));
+
+        var s = samples[^1].Status;
+        CpuNow = Pct(s.CpuAll);
+        Npu0Now = NpuNow(s, 0);
+        Npu1Now = NpuNow(s, 1);
+        HasSecondNpu = npus > 1;
+        BoardMemoryNow = Pct(s.MemoryUsedPercent);
+        NpuMemoryNow = Pct(s.NpuMemory.UsedPercent);
+        TemperatureNow = s.Temperatures.Length == 0 ? "—" : s.MaxTemperature.ToString("0.0", CultureInfo.InvariantCulture) + "°C";
+    }
+
+    private static string Pct(double v) => Num(v) + "%";
+
+    private static string NpuNow(BoardStatus s, int n) => n >= s.Npus.Length ? "" : s.Npus[n].Busy > 0 ? Pct(s.Npus[n].Busy) : "쉬는 중";
+
+    /// <summary>Every sensor of a sample, named as the temperature rows were: "CPU", "센서 1", "센서 2".</summary>
+    private static IReadOnlyList<TrendTipRow> SensorRows(BoardStatus s)
+    {
+        var sensor = 0;
+        return s.Temperatures.Select(t => new TrendTipRow(t.Celsius.ToString("0.0", CultureInfo.InvariantCulture) + "°C",
+            t.Name.StartsWith("cpu", StringComparison.OrdinalIgnoreCase) ? "CPU" : $"센서 {++sensor}")).ToArray();
+    }
+
+    /// <summary>"기록 저장": the last 15 minutes as a table (board-status-….csv) in a folder the user picks.</summary>
+    [RelayCommand]
+    private async Task SaveHistoryAsync()
+    {
+        if (Board.History.Samples.Count == 0)
+            return;
+        var start = TopstToolkit.Core.Workspace.SaveFolders.Prepared(TopstToolkit.Core.Workspace.SaveFolders.BoardResults(_services.Settings.SaveRoot));
+        if (_services.Dialogs.PickFolder("보드 기록을 저장할 폴더", start) is not { } folder)
+            return;
+        var name = $"board-status-{DateTime.Now:yyyyMMdd-HHmmss}.csv";
+        var path = Path.Combine(folder, name);
+        var csv = Board.History.ToCsv();
+        try
+        {
+            await File.WriteAllTextAsync(path, csv, new System.Text.UTF8Encoding(true));   // with a BOM, so Excel reads the Korean names
+            HistorySaveText = $"{name}에 저장했어요";
+            _services.Dialogs.ShowInExplorer(path);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            HistorySaveText = "기록을 저장하지 못했어요";
+            _shell.PostLog("보드 기록: " + e.Message);
+        }
+    }
 
     /// <summary>"2일 5시간", "5시간 12분", "12분".</summary>
     public static string Uptime(long seconds)

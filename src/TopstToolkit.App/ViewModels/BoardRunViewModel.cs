@@ -106,6 +106,9 @@ public partial class BoardRunViewModel : ObservableObject
     [ObservableProperty] private string _emptyText = "";
     [ObservableProperty] private string _sizeNote = "";
 
+    /// <summary>The name of a run in the graphs of 보드 › 상태: "영상 · YOLOv8n" (what · the model it runs).</summary>
+    public string RunLabel(string what) => TargetTitle is { Length: > 0 } title ? $"{what} · {title}" : what;
+
     public void RefreshTarget()
     {
         if (_boardModel is { } m)
@@ -348,7 +351,7 @@ public partial class BoardRunViewModel : ObservableObject
         _run = new CancellationTokenSource();
         var ct = _run.Token;
         IsRunning = true;
-        Board.BeginRun();
+        Board.BeginRun(RunLabel("사진"));
         _shell.BeginTask("보드에서 실행 중", $"사진 {files.Count}장");
         var cancelled = false;
         try
@@ -705,7 +708,7 @@ public partial class BoardRunViewModel : ObservableObject
         _run = new CancellationTokenSource();
         var ct = _run.Token;
         IsRunning = IsVideoRunning = true;
-        Board.BeginRun();
+        Board.BeginRun(RunLabel("영상"));
         TemperatureText = Board.RunStartTemperature is { } t0 ? $"{t0:0}°C" : "—";
         _shell.BeginTask("영상 실행 중", VideoTitle);
         try

@@ -10,34 +10,39 @@
         <SolidColorBrush x:Key="Board.Npu" Color="#18A06B"/>
         <SolidColorBrush x:Key="Board.Memory" Color="#7184FD"/>
         <SolidColorBrush x:Key="Board.Heat" Color="#D97706"/>
+        <!-- the second NPU's line: violet beside the NPU green (checked for colour blindness, 2026-11-28) -->
+        <SolidColorBrush x:Key="Board.Npu1" Color="#6250D6"/>
 
         <!-- the 8px bar of the status tab; its colour comes from Foreground -->
         <Style x:Key="Board.Bar" TargetType="ProgressBar" BasedOn="{StaticResource Progress.Pulse}">
             <Setter Property="Height" Value="8"/>
         </Style>
 
-        <!-- name · bar · value. The bar's colour is the ItemsControl's Tag. DataContext: vm:MeterRow -->
-        <DataTemplate x:Key="Board.Meter" DataType="{x:Type vm:MeterRow}">
-            <Grid Margin="0,6">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="92"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="124"/>
-                </Grid.ColumnDefinitions>
-                <TextBlock Text="{Binding Name}" Style="{StaticResource Text.Label}" VerticalAlignment="Center"/>
-                <ProgressBar Grid.Column="1" Style="{StaticResource Board.Bar}" Value="{Binding Fraction, Mode=OneWay}" VerticalAlignment="Center"
-                             Foreground="{Binding Tag, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
-                <TextBlock x:Name="v" Grid.Column="2" HorizontalAlignment="Right" VerticalAlignment="Center" Style="{StaticResource Text.Label}"
-                           Foreground="{StaticResource Brush.Text.Heading}">
-                    <Run Text="{Binding Value, Mode=OneWay}"/><Run x:Name="u" Text="{Binding Unit, Mode=OneWay}" FontSize="12" Foreground="{StaticResource Brush.Text.Muted}"/>
-                </TextBlock>
-            </Grid>
-            <DataTemplate.Triggers>
-                <DataTrigger Binding="{Binding Muted}" Value="True">
-                    <Setter TargetName="v" Property="Foreground" Value="{StaticResource Brush.Text.Muted}"/>
-                </DataTrigger>
-            </DataTemplate.Triggers>
-        </DataTemplate>
+        <!-- 1분 · 5분 · 15분 over the status tab's graphs -->
+        <Style x:Key="Board.SegSmall" TargetType="RadioButton" BasedOn="{StaticResource Seg}">
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="Padding" Value="11,0"/>
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
+
+        <!-- a graph's legend: a short line in the series colour, the name, the value now (dataviz: text never in the series colour) -->
+        <Style x:Key="Board.LegendKey" TargetType="Border">
+            <Setter Property="Width" Value="12"/>
+            <Setter Property="Height" Value="2"/>
+            <Setter Property="CornerRadius" Value="1"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,0,6,0"/>
+        </Style>
+        <Style x:Key="Board.LegendName" TargetType="TextBlock" BasedOn="{StaticResource Text.Base}">
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="Foreground" Value="{StaticResource Brush.Text.Secondary}"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style x:Key="Board.LegendValue" TargetType="TextBlock" BasedOn="{StaticResource Board.LegendName}">
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{StaticResource Brush.Text.Heading}"/>
+            <Setter Property="Margin" Value="6,0,0,0"/>
+        </Style>
 
         <!-- one of the four tiles on top of the status tab -->
         <Style x:Key="Board.Kpi" TargetType="Border" BasedOn="{StaticResource Card}">
@@ -385,13 +390,35 @@
                 <TextBlock DockPanel.Dock="Left" Text="{Binding HeaderCaption}" Style="{StaticResource Page.Note}" Margin="12,0,0,0"/>
                 <Button DockPanel.Dock="Right" Style="{StaticResource Button.Secondary.Small}" Content="연결 끊기" Command="{Binding DisconnectCommand}" VerticalAlignment="Center"/>
             </DockPanel>
-            <Border DockPanel.Dock="Top" Style="{StaticResource Seg.Frame}" HorizontalAlignment="Left" Margin="0,0,0,14">
-                <StackPanel Orientation="Horizontal">
-                    <RadioButton Style="{StaticResource Seg}" GroupName="boardTab" Tag="first" Content="상태" IsChecked="{Binding IsStatusTab}"/>
-                    <RadioButton Style="{StaticResource Seg}" GroupName="boardTab" Content="실행" IsChecked="{Binding IsRunTab}"/>
-                    <RadioButton Style="{StaticResource Seg}" GroupName="boardTab" Tag="last" Content="올린 모델 · 관리" IsChecked="{Binding IsManageTab}"/>
+            <DockPanel DockPanel.Dock="Top" LastChildFill="False" Margin="0,0,0,14">
+                <Border DockPanel.Dock="Left" Style="{StaticResource Seg.Frame}">
+                    <StackPanel Orientation="Horizontal">
+                        <RadioButton Style="{StaticResource Seg}" GroupName="boardTab" Tag="first" Content="상태" IsChecked="{Binding IsStatusTab}"/>
+                        <RadioButton Style="{StaticResource Seg}" GroupName="boardTab" Content="실행" IsChecked="{Binding IsRunTab}"/>
+                        <RadioButton Style="{StaticResource Seg}" GroupName="boardTab" Tag="last" Content="올린 모델 · 관리" IsChecked="{Binding IsManageTab}"/>
+                    </StackPanel>
+                </Border>
+                <!-- the status tab's graphs: how far back they look, and the table of the last 15 minutes -->
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center"
+                            Visibility="{Binding IsStatusTab, Converter={StaticResource VisibleWhen}}">
+                    <TextBlock Text="{Binding HistorySaveText}" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,14,0"/>
+                    <TextBlock Text="지난" Style="{StaticResource Text.Caption}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <Border Style="{StaticResource Seg.Frame}">
+                        <StackPanel Orientation="Horizontal">
+                            <RadioButton Style="{StaticResource Board.SegSmall}" GroupName="boardWindow" Tag="first" Content="1분" IsChecked="{Binding IsLastMinute}"/>
+                            <RadioButton Style="{StaticResource Board.SegSmall}" GroupName="boardWindow" Content="5분" IsChecked="{Binding IsLastFiveMinutes}"/>
+                            <RadioButton Style="{StaticResource Board.SegSmall}" GroupName="boardWindow" Tag="last" Content="15분" IsChecked="{Binding IsLastFifteenMinutes}"/>
+                        </StackPanel>
+                    </Border>
+                    <Button Style="{StaticResource Button.Quiet.Small}" Command="{Binding SaveHistoryCommand}" Margin="8,0,0,0"
+                            ToolTip="지난 15분의 값을 표(CSV)로 저장해요">
+                        <StackPanel Orientation="Horizontal">
+                            <c:Icon Glyph="Download" FontSize="14" Margin="0,0,6,0"/>
+                            <TextBlock Text="기록 저장" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
                 </StackPanel>
-            </Border>
+            </DockPanel>
 
             <Grid>
                 <!-- =================================================== ② status -->
@@ -447,36 +474,71 @@
                                 <ColumnDefinition Width="12"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <!-- one card, two areas: CPU over NPU -->
+                            <!-- one card, two areas: CPU over NPU. The last minutes as lines (mockup-board-graph.html);
+                                 the bands' names on the upper graph, the time axis under the lower one -->
                             <Border Style="{StaticResource Card}">
                                 <StackPanel>
-                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                                        <c:Icon Glyph="Speed" FontSize="15" Foreground="{StaticResource Board.Cpu}"/>
-                                        <TextBlock Text="CPU" Style="{StaticResource Board.AreaHead}" Margin="7,0,0,0"/>
-                                    </StackPanel>
-                                    <ItemsControl ItemsSource="{Binding Cores}" ItemTemplate="{StaticResource Board.Meter}" Tag="{StaticResource Board.Cpu}" Focusable="False"/>
-                                    <Border Style="{StaticResource Divider}" Margin="-16,10,-16,12"/>
-                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                                        <c:Icon Glyph="Chip" FontSize="15" Foreground="{StaticResource Board.Npu}"/>
-                                        <TextBlock Text="NPU" Style="{StaticResource Board.AreaHead}" Margin="7,0,0,0"/>
-                                    </StackPanel>
-                                    <ItemsControl ItemsSource="{Binding Npus}" ItemTemplate="{StaticResource Board.Meter}" Tag="{StaticResource Board.Npu}" Focusable="False"/>
+                                    <DockPanel Margin="0,0,0,2">
+                                        <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
+                                            <c:Icon Glyph="Speed" FontSize="15" Foreground="{StaticResource Board.Cpu}"/>
+                                            <TextBlock Text="CPU" Style="{StaticResource Board.AreaHead}" Margin="7,0,0,0"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                            <TextBlock Text="전체" Style="{StaticResource Board.LegendName}"/>
+                                            <TextBlock Text="{Binding CpuNow}" Style="{StaticResource Board.LegendValue}"/>
+                                        </StackPanel>
+                                    </DockPanel>
+                                    <c:TrendChart Frame="{Binding CpuTrend}" ShowRunNames="True" HoverTime="{Binding HoverTime}"/>
+                                    <Border Style="{StaticResource Divider}" Margin="-16,6,-16,10"/>
+                                    <DockPanel Margin="0,0,0,2">
+                                        <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
+                                            <c:Icon Glyph="Chip" FontSize="15" Foreground="{StaticResource Board.Npu}"/>
+                                            <TextBlock Text="NPU" Style="{StaticResource Board.AreaHead}" Margin="7,0,0,0"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                            <Border Style="{StaticResource Board.LegendKey}" Background="{StaticResource Board.Npu}"/>
+                                            <TextBlock Text="NPU 0" Style="{StaticResource Board.LegendName}"/>
+                                            <TextBlock Text="{Binding Npu0Now}" Style="{StaticResource Board.LegendValue}"/>
+                                            <StackPanel Orientation="Horizontal" Margin="14,0,0,0" Visibility="{Binding HasSecondNpu, Converter={StaticResource VisibleWhen}}">
+                                                <Border Style="{StaticResource Board.LegendKey}" Background="{StaticResource Board.Npu1}"/>
+                                                <TextBlock Text="NPU 1" Style="{StaticResource Board.LegendName}"/>
+                                                <TextBlock Text="{Binding Npu1Now}" Style="{StaticResource Board.LegendValue}"/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </DockPanel>
+                                    <c:TrendChart Frame="{Binding NpuTrend}" ShowTimeAxis="True" HoverTime="{Binding HoverTime}"/>
                                 </StackPanel>
                             </Border>
                             <!-- memory over temperature -->
                             <Border Grid.Column="2" Style="{StaticResource Card}">
                                 <StackPanel>
-                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                                        <c:Icon Glyph="Layers" FontSize="15" Foreground="{StaticResource Board.Memory}"/>
-                                        <TextBlock Text="메모리" Style="{StaticResource Board.AreaHead}" Margin="7,0,0,0"/>
-                                    </StackPanel>
-                                    <ItemsControl ItemsSource="{Binding Memory}" ItemTemplate="{StaticResource Board.Meter}" Tag="{StaticResource Board.Memory}" Focusable="False"/>
-                                    <Border Style="{StaticResource Divider}" Margin="-16,10,-16,12"/>
-                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                                        <c:Icon Glyph="Heat" FontSize="15" Foreground="{StaticResource Board.Heat}"/>
-                                        <TextBlock Text="온도" Style="{StaticResource Board.AreaHead}" Margin="7,0,0,0"/>
-                                    </StackPanel>
-                                    <ItemsControl ItemsSource="{Binding Temperatures}" ItemTemplate="{StaticResource Board.Meter}" Tag="{StaticResource Board.Heat}" Focusable="False"/>
+                                    <DockPanel Margin="0,0,0,2">
+                                        <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
+                                            <c:Icon Glyph="Layers" FontSize="15" Foreground="{StaticResource Board.Memory}"/>
+                                            <TextBlock Text="메모리" Style="{StaticResource Board.AreaHead}" Margin="7,0,0,0"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                            <Border Style="{StaticResource Board.LegendKey}" Background="{StaticResource Board.Memory}"/>
+                                            <TextBlock Text="보드" Style="{StaticResource Board.LegendName}"/>
+                                            <TextBlock Text="{Binding BoardMemoryNow}" Style="{StaticResource Board.LegendValue}"/>
+                                            <Border Style="{StaticResource Board.LegendKey}" Background="{StaticResource Board.Npu}" Margin="14,0,6,0"/>
+                                            <TextBlock Text="NPU용" Style="{StaticResource Board.LegendName}"/>
+                                            <TextBlock Text="{Binding NpuMemoryNow}" Style="{StaticResource Board.LegendValue}"/>
+                                        </StackPanel>
+                                    </DockPanel>
+                                    <c:TrendChart Frame="{Binding MemoryTrend}" ShowRunNames="True" HoverTime="{Binding HoverTime}"/>
+                                    <Border Style="{StaticResource Divider}" Margin="-16,6,-16,10"/>
+                                    <DockPanel Margin="0,0,0,2">
+                                        <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
+                                            <c:Icon Glyph="Heat" FontSize="15" Foreground="{StaticResource Board.Heat}"/>
+                                            <TextBlock Text="온도" Style="{StaticResource Board.AreaHead}" Margin="7,0,0,0"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                            <TextBlock Text="가장 높은 값" Style="{StaticResource Board.LegendName}"/>
+                                            <TextBlock Text="{Binding TemperatureNow}" Style="{StaticResource Board.LegendValue}"/>
+                                        </StackPanel>
+                                    </DockPanel>
+                                    <c:TrendChart Frame="{Binding TemperatureTrend}" ShowTimeAxis="True" HoverTime="{Binding HoverTime}"/>
                                 </StackPanel>
                             </Border>
                         </Grid>
