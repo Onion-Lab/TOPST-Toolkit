@@ -8,7 +8,7 @@
     <Company>Telechips Inc.</Company>
     <Product>TOPST Toolkit</Product>
     <Copyright>© Telechips Inc.</Copyright>
-    <Version>0.1.2</Version>
+    <Version>0.1.3</Version>
     <NeutralLanguage>ko-KR</NeutralLanguage>
     <!-- The address where the app looks for update.json and update.json.sig (design §7.5), ending in "/": the latest
          release of this repository. Empty: the app has no update screens. -->
