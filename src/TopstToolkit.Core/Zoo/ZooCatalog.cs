@@ -9,6 +9,8 @@ namespace TopstToolkit.Core.Zoo;
 /// <c>engine\zoo\zoo.json</c> (design §5.9): the models of the model zoo, all checked and built by the review, with the
 /// recipe to export each one the same way, the preprocessing its weights were trained with and where the weights
 /// officially come from. Made by <c>build\zoo\zoo_catalog.py</c>; ships with the app next to <c>engine\helpers</c>.
+/// Since 2026-11-28 every model in it also ran on the TOPST AI-G board: one the board cannot load is left out
+/// (<c>leftOut.boardCannotLoad</c>, written by <c>build\perf\zoo_times.py</c>; the user: "모델 모음에서 뺀다").
 /// </summary>
 public sealed class ZooCatalog
 {
@@ -18,6 +20,8 @@ public sealed class ZooCatalog
     [JsonPropertyName("schema")] public int Schema { get; init; }
     /// <summary>The day of the review the numbers come from.</summary>
     [JsonPropertyName("reviewed")] public string Reviewed { get; init; } = "";
+    /// <summary>The day the models' times were measured on the TOPST AI-G board (<see cref="ZooReview.BoardMs"/>), else empty.</summary>
+    [JsonPropertyName("boardMeasured")] public string BoardMeasured { get; init; } = "";
     [JsonPropertyName("sdk")] public string Sdk { get; init; } = "";
     /// <summary>The component with the export packages (<see cref="ComponentCatalog.Zoo"/>).</summary>
     [JsonPropertyName("component")] public string Component { get; init; } = ComponentCatalog.Zoo;
@@ -73,6 +77,9 @@ public sealed class ZooModel
     [JsonPropertyName("preprocess")] public ZooPreprocess Preprocess { get; init; } = new();
     [JsonPropertyName("weights")] public ZooWeights Weights { get; init; } = new();
     [JsonPropertyName("license")] public ZooLicense License { get; init; } = new();
+
+    /// <summary>The time the list shows: the board's (measured or estimated), else the review's estimate.</summary>
+    [JsonIgnore] public double? TimeMs => Review.BoardMs ?? Review.Ms;
     [JsonPropertyName("review")] public ZooReview Review { get; init; } = new();
 
     [JsonIgnore] public string LibraryName => Library switch { "ultralytics" => "Ultralytics", "torchvision" => "torchvision", "timm" => "timm", var x => x };
@@ -160,4 +167,12 @@ public sealed class ZooReview
     [JsonPropertyName("boardPostProcess")] public string? BoardPostProcess { get; init; }
     /// <summary>The most memory the build's tools took on the PC in the review (null in the first catalog of 2026-11-23).</summary>
     [JsonPropertyName("peakMemoryBytes")] public long? PeakMemoryBytes { get; init; }
+
+    /// <summary>
+    /// The NPU time of one frame on the TOPST AI-G board in ms (design §11, 2026-11-28): measured there for the model's
+    /// export (the weights do not change it), or the board estimate when it was not measured. Null in a catalog from before.
+    /// </summary>
+    [JsonPropertyName("boardMs")] public double? BoardMs { get; init; }
+    /// <summary>True when <see cref="BoardMs"/> was measured on the board.</summary>
+    [JsonPropertyName("boardMeasured")] public bool BoardMeasured { get; init; }
 }

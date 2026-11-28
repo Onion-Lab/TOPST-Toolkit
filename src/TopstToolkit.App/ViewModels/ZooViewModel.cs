@@ -14,13 +14,13 @@ using TopstToolkit.Core.Zoo;
 
 namespace TopstToolkit.App.ViewModels;
 
-/// <summary>One model of the list: name, source, input, parameters and the board time the review estimated.</summary>
+/// <summary>One model of the list: name, source, input, parameters and its time on the board (measured there since 2026-11-28).</summary>
 public partial class ZooRowViewModel : ObservableObject
 {
     public ZooRowViewModel(ZooModel model, double longestMs)
     {
         Model = model;
-        var ms = model.Review.Ms ?? 0;
+        var ms = model.TimeMs ?? 0;
         BarWidth = ms > 0 ? 6 + 46 * Math.Log(1 + ms) / Math.Log(1 + Math.Max(longestMs, 1)) : 0;
     }
 
@@ -33,7 +33,7 @@ public partial class ZooRowViewModel : ObservableObject
     public string SubText => Model.DatasetText + (Model.Export.Smaller ? $" · 입력을 {Model.Export.NominalSize}에서 줄임" : "");
     public string SizeText => Model.Export.Size.ToString(CultureInfo.InvariantCulture);
     public string ParamsText => ZooViewModel.Params(Model.Review.Params);
-    public string MsText => ZooViewModel.Ms(Model.Review.Ms);
+    public string MsText => ZooViewModel.Ms(Model.TimeMs);
     public double BarWidth { get; }
 
     [ObservableProperty] private bool _isSelected;
@@ -90,9 +90,10 @@ public partial class ZooViewModel : ObservableObject, IPageViewModel
             Problem = "모델 모음 목록(engine\\zoo\\zoo.json)을 찾지 못했어요. TOPST Toolkit을 다시 설치해 주세요.";
         else
         {
-            var longest = _catalog.Models.Max(m => m.Review.Ms ?? 0);
+            var longest = _catalog.Models.Max(m => m.TimeMs ?? 0);
             _rows.AddRange(_catalog.Models.Select(m => new ZooRowViewModel(m, longest)));
             Reviewed = _catalog.Reviewed;
+            BoardMeasured = _catalog.BoardMeasured;
         }
         ClassCount = _rows.Count(r => r.Model.Task == "class");
         ObjectCount = _rows.Count(r => r.Model.Task == "obj");
@@ -103,7 +104,13 @@ public partial class ZooViewModel : ObservableObject, IPageViewModel
     public bool HasProblem => Problem.Length > 0;
     /// <summary>The day of the review the numbers come from.</summary>
     public string Reviewed { get; } = "";
-    public string Note => $"모두 이 앱으로 내보내 NPU 점검과 빌드를 통과한 모델이에요 ({Reviewed} 검토)";
+    /// <summary>The day the times were measured on the board, or empty for a catalog with the review's estimates.</summary>
+    public string BoardMeasured { get; } = "";
+    public string Note => BoardMeasured.Length > 0
+        ? $"모두 이 앱으로 내보내 점검 · 빌드한 모델이에요 · 시간은 TOPST AI-G 보드에서 잰 값 ({BoardMeasured})"
+        : $"모두 이 앱으로 내보내 NPU 점검과 빌드를 통과한 모델이에요 ({Reviewed} 검토)";
+    /// <summary>The list's time column.</summary>
+    public string TimeHead => BoardMeasured.Length > 0 ? "보드 시간" : "보드 시간 (추정)";
 
     // ------------------------------------------------------------------------------------------------ the list
 
@@ -130,7 +137,7 @@ public partial class ZooViewModel : ObservableObject, IPageViewModel
     /// <summary>The line under the list: what is not in it, and why.</summary>
     public string Foot => Tab == "obj"
         ? "모두 이 앱으로 내보내 점검 · 빌드한 모델이에요. YOLO26 · YOLO12 · YOLO11 · YOLOv10처럼 어텐션이 들어 있어 NPU가 실행하지 못하는 모델과 공식 가중치가 없는 YOLOv6은 넣지 않았어요."
-        : "모두 이 앱으로 내보내 점검 · 빌드한 모델이에요. EfficientNet처럼 큰 입력에서 컴파일되지 않는 모델은 되는 크기로 넣었고, 어텐션이 들어 있는 모델(ConvNeXt · ViT 등)은 NPU가 실행하지 못해 넣지 않았어요.";
+        : "모두 이 앱으로 내보내 점검 · 빌드한 모델이에요. EfficientNet처럼 큰 입력에서 컴파일되지 않는 모델은 되는 크기로 넣었고, 어텐션이 들어 있는 모델(ConvNeXt · ViT 등)과 보드의 NPU 메모리에 올라가지 않는 VGG는 넣지 않았어요.";
 
     partial void OnTabChanged(string value)
     {
@@ -208,7 +215,10 @@ public partial class ZooViewModel : ObservableObject, IPageViewModel
     public string TaskText => Model?.TaskText ?? "";
     public string About => Model is null ? "" : (Model.About.Length > 0 ? Model.About + " " : "") +
         (Model.Task == "obj" ? "사람 · 차 · 개처럼 COCO의 80가지를 찾습니다." : "ImageNet의 1000가지를 구분합니다.");
-    public string MsText => Model is null ? "" : $"약 {Ms(Model.Review.Ms)} (성능 추정)";
+    public string MsText => Model is null ? ""
+        : Model.Review.BoardMs is { } board ? $"약 {Ms(board)} ({(Model.Review.BoardMeasured ? "보드에서 잰 시간" : "보드 추정")})"
+        : $"약 {Ms(Model.Review.Ms)} (성능 추정)";
+
     public string InputText => Model is null ? "" : $"{Model.Export.Size} × {Model.Export.Size}" +
         (Model.Export.Size != Model.Export.NominalSize ? $" (원래 {Model.Export.NominalSize})" : "");
     public string WeightsText => Model?.Weights.Caption ?? "";

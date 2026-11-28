@@ -141,7 +141,7 @@
                                 <TextBlock Text="모델" Style="{StaticResource Table.Head}"/>
                                 <TextBlock Grid.Column="1" Text="입력" Style="{StaticResource Table.Head}" TextAlignment="Right"/>
                                 <TextBlock Grid.Column="2" Text="파라미터" Style="{StaticResource Table.Head}" TextAlignment="Right"/>
-                                <TextBlock Grid.Column="3" Text="보드 시간 (추정)" Style="{StaticResource Table.Head}" TextAlignment="Right"/>
+                                <TextBlock Grid.Column="3" Text="{Binding TimeHead}" Style="{StaticResource Table.Head}" TextAlignment="Right"/>
                             </Grid>
                         </Border>
                         <Border DockPanel.Dock="Bottom" BorderBrush="{StaticResource Brush.Border.Default}" BorderThickness="0,1,0,0" Padding="16,10">

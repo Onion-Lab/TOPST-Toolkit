@@ -314,7 +314,7 @@ if (command == "probe")
 if (command == "zoo")
 {
     // TopstToolkit.Cli zoo list [--task class|obj]
-    // TopstToolkit.Cli zoo prepare <id>[,<id>...] [--build 1] [--random-weights 1] [--root <components folder>]
+    // TopstToolkit.Cli zoo prepare <id>[,<id>...] [--build 1] [--random-weights 1] [--cut-frontier 1] [--root <components folder>]
     // The model zoo (design §5.9) without the window: what 모델 모음 does on "만들고 바로 빌드" — the weights from their
     // official source (checked, kept in <components>\downloads\zoo), the export the review did, the import every model
     // goes through, the catalog's preprocessing, and with --build the app's build. The export packages are the installed
@@ -322,13 +322,13 @@ if (command == "zoo")
     var zooCatalog = TopstToolkit.Core.Zoo.ZooCatalog.Load(Path.Combine(TopstToolkit.Core.Zoo.ZooCatalog.DirectoryFor(layout.HelpersDir), TopstToolkit.Core.Zoo.ZooCatalog.FileName));
     if (options.Positional.ElementAtOrDefault(1) is not ("list" or "prepare"))
     {
-        Out("usage: zoo list [--task class|obj] | zoo prepare <id>[,<id>...] [--build 1] [--random-weights 1] [--root <components folder>]");
+        Out("usage: zoo list [--task class|obj] | zoo prepare <id>[,<id>...] [--build 1] [--random-weights 1] [--cut-frontier 1] [--root <components folder>]");
         return 2;
     }
     if (options.Positional[1] == "list")
     {
         foreach (var m in zooCatalog.Models.Where(m => options.Get("--task") is not { } task || m.Task == task))
-            Out($"{m.Id,-40} {m.TaskText} · {m.LibraryName,-11} {m.Display,-26} {m.Export.Size,4}px · {m.Review.Params / 1e6,6:0.0} M · {m.Review.Ms,7:0.00} ms · {m.Weights.Caption}");
+            Out($"{m.Id,-40} {m.TaskText} · {m.LibraryName,-11} {m.Display,-26} {m.Export.Size,4}px · {m.Review.Params / 1e6,6:0.0} M · {m.Review.Ms,7:0.00} ms · 보드 {m.Review.BoardMs,7:0.00} ms{(m.Review.BoardMeasured ? " 실측" : " 추정")} · {m.Weights.Caption}");
         Out($"{zooCatalog.Models.Count} models (reviewed {zooCatalog.Reviewed})");
         return 0;
     }
@@ -366,6 +366,12 @@ if (command == "zoo")
         try
         {
             var prepared = await preparer.PrepareAsync(model, project, zooProgress, null, cts.Token, options.Get("--random-weights") is "1" or "true");
+            // --cut-frontier: what someone does on the model screen for a model the zoo opens there (a classifier's Softmax tail)
+            if (options.Get("--cut-frontier") is "1" or "true" && project.Model is { NeedsCut: true, Check.Proposal: { Decoder: null, Nodes.Count: > 0 } frontier })
+            {
+                await new TopstToolkit.Core.Projects.ModelImporter(zooStore, session).CutAsync(project, frontier.Nodes, cts.Token);
+                Out($"  자름: {string.Join(", ", frontier.Nodes)}의 결과가 모델의 끝 · 준비됨 {project.Model.IsReady}");
+            }
             Out($"  프로젝트 {project.Id} · {project.Name} · {project.Preset} · 점검 {project.Model?.Check?.Outcome} · 자른 곳 {project.Model?.Cut?.Decoder ?? "없음"} · " +
                 $"mean {string.Join("/", project.Options.Convert.Mean)} std {string.Join("/", project.Options.Convert.Std)} · 내보내기 {prepared.Export.Seconds:0.0} s, 고침 {string.Join(",", prepared.Export.Fixes.Keys)}");
             if (options.Get("--build") is "1" or "true")

@@ -2,6 +2,7 @@
  "schema": 1,
  "about": "The model zoo (docs/design.md section 5.9): models that passed the review of 2026-11-23 (export, NPU check, build), the recipe to export them the same way and where their weights officially come from. Made by build/zoo/zoo_catalog.py from engine/zoo/review-2026-11-23.json.",
  "reviewed": "2026-11-23",
+ "boardMeasured": "2026-11-28",
  "sdk": "0.9.9",
  "component": "zoo",
  "leftOut": {
@@ -26,6 +27,10 @@
    "timm-seresnet18",
    "timm-cs3darknet_s",
    "timm-vovnet39a"
+  ],
+  "boardCannotLoad": [
+   "timm-vgg11",
+   "timm-vgg16"
   ]
  },
  "models": [
@@ -77,7 +82,9 @@
     "decoder": "yolo-v8",
     "preset": "pytorch-yolo-v8",
     "boardPostProcess": "fast-yolo",
-    "peakMemoryBytes": 7759982592
+    "peakMemoryBytes": 7759982592,
+    "boardMs": 119.584,
+    "boardMeasured": true
    }
   },
   {
@@ -128,7 +135,9 @@
     "decoder": "yolo-v8",
     "preset": "pytorch-yolo-v8",
     "boardPostProcess": "fast-yolo",
-    "peakMemoryBytes": 570982400
+    "peakMemoryBytes": 570982400,
+    "boardMs": 10.529,
+    "boardMeasured": true
    }
   },
   {
@@ -179,7 +188,9 @@
     "decoder": "yolo-v8",
     "preset": "pytorch-yolo-v8",
     "boardPostProcess": "fast-yolo",
-    "peakMemoryBytes": 1118040064
+    "peakMemoryBytes": 1118040064,
+    "boardMs": 16.93,
+    "boardMeasured": true
    }
   },
   {
@@ -230,7 +241,9 @@
     "decoder": "yolo-v8",
     "preset": "pytorch-yolo-v8",
     "boardPostProcess": "fast-yolo",
-    "peakMemoryBytes": 2445111296
+    "peakMemoryBytes": 2445111296,
+    "boardMs": 39.21,
+    "boardMeasured": true
    }
   },
   {
@@ -281,7 +294,9 @@
     "decoder": "yolo-v8",
     "preset": "pytorch-yolo-v8",
     "boardPostProcess": "fast-yolo",
-    "peakMemoryBytes": 4617170944
+    "peakMemoryBytes": 4617170944,
+    "boardMs": 64.133,
+    "boardMeasured": true
    }
   },
   {
@@ -332,7 +347,9 @@
     "decoder": "yolo-v8",
     "preset": "pytorch-yolo-v8",
     "boardPostProcess": "fast-yolo",
-    "peakMemoryBytes": 9193435136
+    "peakMemoryBytes": 9193435136,
+    "boardMs": 119.81,
+    "boardMeasured": true
    }
   },
   {
@@ -383,7 +400,9 @@
     "decoder": "yolo-v8",
     "preset": "pytorch-yolo-v8",
     "boardPostProcess": "fast-yolo",
-    "peakMemoryBytes": 563163136
+    "peakMemoryBytes": 563163136,
+    "boardMs": 9.487,
+    "boardMeasured": true
    }
   },
   {
@@ -434,7 +453,9 @@
     "decoder": "yolo-v8",
     "preset": "pytorch-yolo-v8",
     "boardPostProcess": "fast-yolo",
-    "peakMemoryBytes": 1029517312
+    "peakMemoryBytes": 1029517312,
+    "boardMs": 17.532,
+    "boardMeasured": true
    }
   },
   {
@@ -485,7 +506,9 @@
     "decoder": "yolo-v8",
     "preset": "pytorch-yolo-v8",
     "boardPostProcess": "fast-yolo",
-    "peakMemoryBytes": 2254524416
+    "peakMemoryBytes": 2254524416,
+    "boardMs": 43.45,
+    "boardMeasured": true
    }
   },
   {
@@ -536,7 +559,9 @@
     "decoder": "yolo-v8",
     "preset": "pytorch-yolo-v8",
     "boardPostProcess": "fast-yolo",
-    "peakMemoryBytes": 4094099456
+    "peakMemoryBytes": 4094099456,
+    "boardMs": 72.779,
+    "boardMeasured": true
    }
   },
   {
@@ -587,7 +612,9 @@
     "decoder": "yolo-v8",
     "preset": "pytorch-yolo-v8",
     "boardPostProcess": "fast-yolo",
-    "peakMemoryBytes": 8307810304
+    "peakMemoryBytes": 8307810304,
+    "boardMs": 121.03,
+    "boardMeasured": true
    }
   },
   {
@@ -638,7 +665,9 @@
     "decoder": "yolo-v8",
     "preset": "pytorch-yolo-v8",
     "boardPostProcess": "fast-yolo",
-    "peakMemoryBytes": 670060544
+    "peakMemoryBytes": 670060544,
+    "boardMs": 42.589,
+    "boardMeasured": true
    }
   },
   {
@@ -689,7 +718,9 @@
     "decoder": "yolo-v8",
     "preset": "pytorch-yolo-v8",
     "boardPostProcess": "fast-yolo",
-    "peakMemoryBytes": 967720960
+    "peakMemoryBytes": 967720960,
+    "boardMs": 76.989,
+    "boardMeasured": true
    }
   },
   {
@@ -740,7 +771,9 @@
     "decoder": "yolo-v8",
     "preset": "pytorch-yolo-v8",
     "boardPostProcess": "fast-yolo",
-    "peakMemoryBytes": 2385563648
+    "peakMemoryBytes": 2385563648,
+    "boardMs": 164.038,
+    "boardMeasured": true
    }
   },
   {
@@ -791,7 +824,9 @@
     "decoder": "yolo-v8",
     "preset": "pytorch-yolo-v8",
     "boardPostProcess": "fast-yolo",
-    "peakMemoryBytes": 2630172672
+    "peakMemoryBytes": 2630172672,
+    "boardMs": 266.815,
+    "boardMeasured": true
    }
   },
   {
@@ -843,7 +878,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 705171456
+    "peakMemoryBytes": 705171456,
+    "boardMs": 5.301,
+    "boardMeasured": true
    }
   },
   {
@@ -895,7 +932,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 1199448064
+    "peakMemoryBytes": 1199448064,
+    "boardMs": 7.917,
+    "boardMeasured": true
    }
   },
   {
@@ -947,7 +986,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 1385381888
+    "peakMemoryBytes": 1385381888,
+    "boardMs": 9.146,
+    "boardMeasured": true
    }
   },
   {
@@ -999,7 +1040,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 2149244928
+    "peakMemoryBytes": 2149244928,
+    "boardMs": 13.646,
+    "boardMeasured": true
    }
   },
   {
@@ -1051,7 +1094,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 2818654208
+    "peakMemoryBytes": 2818654208,
+    "boardMs": 17.913,
+    "boardMeasured": true
    }
   },
   {
@@ -1103,7 +1148,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 2953154560
+    "peakMemoryBytes": 2953154560,
+    "boardMs": 15.732,
+    "boardMeasured": true
    }
   },
   {
@@ -1155,7 +1202,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 5223374848
+    "peakMemoryBytes": 5223374848,
+    "boardMs": 28.088,
+    "boardMeasured": true
    }
   },
   {
@@ -1207,7 +1256,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 335183872
+    "peakMemoryBytes": 335183872,
+    "boardMs": 6.79,
+    "boardMeasured": true
    }
   },
   {
@@ -1259,7 +1310,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 306278400
+    "peakMemoryBytes": 306278400,
+    "boardMs": 3.696,
+    "boardMeasured": true
    }
   },
   {
@@ -1311,7 +1364,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 830242816
+    "peakMemoryBytes": 830242816,
+    "boardMs": 11.367,
+    "boardMeasured": true
    }
   },
   {
@@ -1363,7 +1418,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 1290571776
+    "peakMemoryBytes": 1290571776,
+    "boardMs": 14.182,
+    "boardMeasured": true
    }
   },
   {
@@ -1415,7 +1472,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 1745137664
+    "peakMemoryBytes": 1745137664,
+    "boardMs": 17.727,
+    "boardMeasured": true
    }
   },
   {
@@ -1467,7 +1526,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 1305280512
+    "peakMemoryBytes": 1305280512,
+    "boardMs": 54.248,
+    "boardMeasured": true
    }
   },
   {
@@ -1522,7 +1583,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 344223744
+    "peakMemoryBytes": 344223744,
+    "boardMs": 1.688,
+    "boardMeasured": true
    }
   },
   {
@@ -1577,7 +1640,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 458829824
+    "peakMemoryBytes": 458829824,
+    "boardMs": 2.545,
+    "boardMeasured": true
    }
   },
   {
@@ -1632,7 +1697,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 571957248
+    "peakMemoryBytes": 571957248,
+    "boardMs": 3.325,
+    "boardMeasured": true
    }
   },
   {
@@ -1687,7 +1754,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 994803712
+    "peakMemoryBytes": 994803712,
+    "boardMs": 4.835,
+    "boardMeasured": true
    }
   },
   {
@@ -1739,7 +1808,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 491298816
+    "peakMemoryBytes": 491298816,
+    "boardMs": 1.304,
+    "boardMeasured": true
    }
   },
   {
@@ -1793,7 +1864,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 489447424
+    "peakMemoryBytes": 489447424,
+    "boardMs": 3.5,
+    "boardMeasured": true
    }
   },
   {
@@ -1847,7 +1920,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 369750016
+    "peakMemoryBytes": 369750016,
+    "boardMs": 1.872,
+    "boardMeasured": true
    }
   },
   {
@@ -1901,7 +1976,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 388440064
+    "peakMemoryBytes": 388440064,
+    "boardMs": 0.831,
+    "boardMeasured": true
    }
   },
   {
@@ -1955,7 +2032,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 461586432
+    "peakMemoryBytes": 461586432,
+    "boardMs": 1.215,
+    "boardMeasured": true
    }
   },
   {
@@ -2009,7 +2088,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 536199168
+    "peakMemoryBytes": 536199168,
+    "boardMs": 1.522,
+    "boardMeasured": true
    }
   },
   {
@@ -2063,7 +2144,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 649203712
+    "peakMemoryBytes": 649203712,
+    "boardMs": 2.137,
+    "boardMeasured": true
    }
   },
   {
@@ -2117,7 +2200,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 544788480
+    "peakMemoryBytes": 544788480,
+    "boardMs": 3.385,
+    "boardMeasured": true
    }
   },
   {
@@ -2171,7 +2256,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 714305536
+    "peakMemoryBytes": 714305536,
+    "boardMs": 5.396,
+    "boardMeasured": true
    }
   },
   {
@@ -2225,7 +2312,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 907026432
+    "peakMemoryBytes": 907026432,
+    "boardMs": 5.772,
+    "boardMeasured": true
    }
   },
   {
@@ -2279,7 +2368,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 1104793600
+    "peakMemoryBytes": 1104793600,
+    "boardMs": 7.495,
+    "boardMeasured": true
    }
   },
   {
@@ -2333,7 +2424,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 1655001088
+    "peakMemoryBytes": 1655001088,
+    "boardMs": 10.664,
+    "boardMeasured": true
    }
   },
   {
@@ -2387,7 +2480,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 2342187008
+    "peakMemoryBytes": 2342187008,
+    "boardMs": 15.218,
+    "boardMeasured": true
    }
   },
   {
@@ -2441,7 +2536,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 3319177216
+    "peakMemoryBytes": 3319177216,
+    "boardMs": 19.678,
+    "boardMeasured": true
    }
   },
   {
@@ -2495,7 +2592,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 4736761856
+    "peakMemoryBytes": 4736761856,
+    "boardMs": 26.938,
+    "boardMeasured": true
    }
   },
   {
@@ -2547,7 +2646,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 1919823872
+    "peakMemoryBytes": 1919823872,
+    "boardMs": 24.152,
+    "boardMeasured": true
    }
   },
   {
@@ -2599,7 +2700,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 5707911168
+    "peakMemoryBytes": 5707911168,
+    "boardMs": 62.3,
+    "boardMeasured": true
    }
   },
   {
@@ -2650,7 +2753,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 454361088
+    "peakMemoryBytes": 454361088,
+    "boardMs": 1.047,
+    "boardMeasured": true
    }
   },
   {
@@ -2701,7 +2806,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 579371008
+    "peakMemoryBytes": 579371008,
+    "boardMs": 1.548,
+    "boardMeasured": true
    }
   },
   {
@@ -2752,7 +2859,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 356429824
+    "peakMemoryBytes": 356429824,
+    "boardMs": 0.741,
+    "boardMeasured": true
    }
   },
   {
@@ -2803,7 +2912,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 491536384
+    "peakMemoryBytes": 491536384,
+    "boardMs": 1.304,
+    "boardMeasured": true
    }
   },
   {
@@ -2854,7 +2965,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 574787584
+    "peakMemoryBytes": 574787584,
+    "boardMs": 1.72,
+    "boardMeasured": true
    }
   },
   {
@@ -2905,7 +3018,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 705314816
+    "peakMemoryBytes": 705314816,
+    "boardMs": 2.332,
+    "boardMeasured": true
    }
   },
   {
@@ -2956,7 +3071,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 647917568
+    "peakMemoryBytes": 647917568,
+    "boardMs": 2.13,
+    "boardMeasured": true
    }
   },
   {
@@ -3010,7 +3127,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 342405120
+    "peakMemoryBytes": 342405120,
+    "boardMs": 1.41,
+    "boardMeasured": true
    }
   },
   {
@@ -3064,7 +3183,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 354062336
+    "peakMemoryBytes": 354062336,
+    "boardMs": 1.655,
+    "boardMeasured": true
    }
   },
   {
@@ -3118,7 +3239,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 369168384
+    "peakMemoryBytes": 369168384,
+    "boardMs": 1.872,
+    "boardMeasured": true
    }
   },
   {
@@ -3172,7 +3295,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 488804352
+    "peakMemoryBytes": 488804352,
+    "boardMs": 3.5,
+    "boardMeasured": true
    }
   },
   {
@@ -3226,7 +3351,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 875081728
+    "peakMemoryBytes": 875081728,
+    "boardMs": 7.702,
+    "boardMeasured": true
    }
   },
   {
@@ -3280,7 +3407,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 486875136
+    "peakMemoryBytes": 486875136,
+    "boardMs": 3.38,
+    "boardMeasured": true
    }
   },
   {
@@ -3333,7 +3462,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 335781888
+    "peakMemoryBytes": 335781888,
+    "boardMs": 0.679,
+    "boardMeasured": true
    }
   },
   {
@@ -3386,7 +3517,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 459563008
+    "peakMemoryBytes": 459563008,
+    "boardMs": 1.381,
+    "boardMeasured": true
    }
   },
   {
@@ -3437,7 +3570,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 536682496
+    "peakMemoryBytes": 536682496,
+    "boardMs": 1.523,
+    "boardMeasured": true
    }
   },
   {
@@ -3488,7 +3623,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 374628352
+    "peakMemoryBytes": 374628352,
+    "boardMs": 1.134,
+    "boardMeasured": true
    }
   },
   {
@@ -3539,7 +3676,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 410959872
+    "peakMemoryBytes": 410959872,
+    "boardMs": 1.64,
+    "boardMeasured": true
    }
   },
   {
@@ -3590,7 +3729,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 480129024
+    "peakMemoryBytes": 480129024,
+    "boardMs": 2.081,
+    "boardMeasured": true
    }
   },
   {
@@ -3641,7 +3782,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 701927424
+    "peakMemoryBytes": 701927424,
+    "boardMs": 1.538,
+    "boardMeasured": true
    }
   },
   {
@@ -3692,7 +3835,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 1651609600
+    "peakMemoryBytes": 1651609600,
+    "boardMs": 1.73,
+    "boardMeasured": true
    }
   },
   {
@@ -3746,7 +3891,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 743305216
+    "peakMemoryBytes": 743305216,
+    "boardMs": 9.12,
+    "boardMeasured": true
    }
   },
   {
@@ -3800,7 +3947,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 824795136
+    "peakMemoryBytes": 824795136,
+    "boardMs": 10.752,
+    "boardMeasured": true
    }
   },
   {
@@ -3854,7 +4003,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 1079394304
+    "peakMemoryBytes": 1079394304,
+    "boardMs": 16.853,
+    "boardMeasured": true
    }
   },
   {
@@ -3908,7 +4059,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 451821568
+    "peakMemoryBytes": 451821568,
+    "boardMs": 3.636,
+    "boardMeasured": true
    }
   },
   {
@@ -3962,7 +4115,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 467873792
+    "peakMemoryBytes": 467873792,
+    "boardMs": 3.216,
+    "boardMeasured": true
    }
   },
   {
@@ -4016,7 +4171,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 483184640
+    "peakMemoryBytes": 483184640,
+    "boardMs": 3.64,
+    "boardMeasured": true
    }
   },
   {
@@ -4070,7 +4227,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 605245440
+    "peakMemoryBytes": 605245440,
+    "boardMs": 5.12,
+    "boardMeasured": true
    }
   },
   {
@@ -4124,7 +4283,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 607264768
+    "peakMemoryBytes": 607264768,
+    "boardMs": 5.637,
+    "boardMeasured": true
    }
   },
   {
@@ -4178,7 +4339,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 616345600
+    "peakMemoryBytes": 616345600,
+    "boardMs": 5.812,
+    "boardMeasured": true
    }
   },
   {
@@ -4232,7 +4395,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 337289216
+    "peakMemoryBytes": 337289216,
+    "boardMs": 2.16,
+    "boardMeasured": true
    }
   },
   {
@@ -4286,7 +4451,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 352083968
+    "peakMemoryBytes": 352083968,
+    "boardMs": 2.643,
+    "boardMeasured": true
    }
   },
   {
@@ -4340,7 +4507,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 372432896
+    "peakMemoryBytes": 372432896,
+    "boardMs": 2.923,
+    "boardMeasured": true
    }
   },
   {
@@ -4394,7 +4563,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 597176320
+    "peakMemoryBytes": 597176320,
+    "boardMs": 3.889,
+    "boardMeasured": true
    }
   },
   {
@@ -4448,7 +4619,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 488042496
+    "peakMemoryBytes": 488042496,
+    "boardMs": 2.888,
+    "boardMeasured": true
    }
   },
   {
@@ -4502,7 +4675,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 433332224
+    "peakMemoryBytes": 433332224,
+    "boardMs": 2.071,
+    "boardMeasured": true
    }
   },
   {
@@ -4553,7 +4728,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 399011840
+    "peakMemoryBytes": 399011840,
+    "boardMs": 1.465,
+    "boardMeasured": true
    }
   },
   {
@@ -4604,7 +4781,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 374038528
+    "peakMemoryBytes": 374038528,
+    "boardMs": 0.812,
+    "boardMeasured": true
    }
   },
   {
@@ -4658,7 +4837,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 544399360
+    "peakMemoryBytes": 544399360,
+    "boardMs": 3.385,
+    "boardMeasured": true
    }
   },
   {
@@ -4712,7 +4893,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 713953280
+    "peakMemoryBytes": 713953280,
+    "boardMs": 5.376,
+    "boardMeasured": true
    }
   },
   {
@@ -4766,7 +4949,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 907173888
+    "peakMemoryBytes": 907173888,
+    "boardMs": 5.774,
+    "boardMeasured": true
    }
   },
   {
@@ -4820,7 +5005,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 1104347136
+    "peakMemoryBytes": 1104347136,
+    "boardMs": 7.498,
+    "boardMeasured": true
    }
   },
   {
@@ -4874,7 +5061,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 1654775808
+    "peakMemoryBytes": 1654775808,
+    "boardMs": 10.665,
+    "boardMeasured": true
    }
   },
   {
@@ -4925,7 +5114,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 659943424
+    "peakMemoryBytes": 659943424,
+    "boardMs": 1.721,
+    "boardMeasured": true
    }
   },
   {
@@ -4978,7 +5169,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 547848192
+    "peakMemoryBytes": 547848192,
+    "boardMs": 1.625,
+    "boardMeasured": true
    }
   },
   {
@@ -5031,7 +5224,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 644001792
+    "peakMemoryBytes": 644001792,
+    "boardMs": 2.04,
+    "boardMeasured": true
    }
   },
   {
@@ -5084,7 +5279,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 740245504
+    "peakMemoryBytes": 740245504,
+    "boardMs": 2.373,
+    "boardMeasured": true
    }
   },
   {
@@ -5137,7 +5334,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 848044032
+    "peakMemoryBytes": 848044032,
+    "boardMs": 3.765,
+    "boardMeasured": true
    }
   },
   {
@@ -5191,7 +5390,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 1149493248
+    "peakMemoryBytes": 1149493248,
+    "boardMs": 4.044,
+    "boardMeasured": true
    }
   },
   {
@@ -5242,7 +5443,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 644677632
+    "peakMemoryBytes": 644677632,
+    "boardMs": 2.673,
+    "boardMeasured": true
    }
   },
   {
@@ -5293,7 +5496,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 791846912
+    "peakMemoryBytes": 791846912,
+    "boardMs": 4.165,
+    "boardMeasured": true
    }
   },
   {
@@ -5346,7 +5551,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 1023389696
+    "peakMemoryBytes": 1023389696,
+    "boardMs": 5.067,
+    "boardMeasured": true
    }
   },
   {
@@ -5397,7 +5604,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 644190208
+    "peakMemoryBytes": 644190208,
+    "boardMs": 2.673,
+    "boardMeasured": true
    }
   },
   {
@@ -5450,7 +5659,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 1023451136
+    "peakMemoryBytes": 1023451136,
+    "boardMs": 5.068,
+    "boardMeasured": true
    }
   },
   {
@@ -5501,7 +5712,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 1297432576
+    "peakMemoryBytes": 1297432576,
+    "boardMs": 8.354,
+    "boardMeasured": true
    }
   },
   {
@@ -5552,7 +5765,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 2111164416
+    "peakMemoryBytes": 2111164416,
+    "boardMs": 18.908,
+    "boardMeasured": true
    }
   },
   {
@@ -5606,7 +5821,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 584855552
+    "peakMemoryBytes": 584855552,
+    "boardMs": 3.749,
+    "boardMeasured": true
    }
   },
   {
@@ -5660,7 +5877,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 674390016
+    "peakMemoryBytes": 674390016,
+    "boardMs": 4.617,
+    "boardMeasured": true
    }
   },
   {
@@ -5714,7 +5933,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 1005932544
+    "peakMemoryBytes": 1005932544,
+    "boardMs": 5.344,
+    "boardMeasured": true
    }
   },
   {
@@ -5768,7 +5989,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 1313648640
+    "peakMemoryBytes": 1313648640,
+    "boardMs": 7.739,
+    "boardMeasured": true
    }
   },
   {
@@ -5822,7 +6045,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 1831534592
+    "peakMemoryBytes": 1831534592,
+    "boardMs": 19.056,
+    "boardMeasured": true
    }
   },
   {
@@ -5873,7 +6098,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 435097600
+    "peakMemoryBytes": 435097600,
+    "boardMs": 2.782,
+    "boardMeasured": true
    }
   },
   {
@@ -5924,7 +6151,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 699355136
+    "peakMemoryBytes": 699355136,
+    "boardMs": 5.844,
+    "boardMeasured": true
    }
   },
   {
@@ -5975,7 +6204,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 704778240
+    "peakMemoryBytes": 704778240,
+    "boardMs": 5.303,
+    "boardMeasured": true
    }
   },
   {
@@ -6026,7 +6257,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 705654784
+    "peakMemoryBytes": 705654784,
+    "boardMs": 5.851,
+    "boardMeasured": true
    }
   },
   {
@@ -6077,7 +6310,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 996929536
+    "peakMemoryBytes": 996929536,
+    "boardMs": 6.835,
+    "boardMeasured": true
    }
   },
   {
@@ -6128,7 +6363,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 936681472
+    "peakMemoryBytes": 936681472,
+    "boardMs": 10.495,
+    "boardMeasured": true
    }
   },
   {
@@ -6179,7 +6416,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 1017049088
+    "peakMemoryBytes": 1017049088,
+    "boardMs": 13.561,
+    "boardMeasured": true
    }
   },
   {
@@ -6230,7 +6469,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 1199415296
+    "peakMemoryBytes": 1199415296,
+    "boardMs": 7.918,
+    "boardMeasured": true
    }
   },
   {
@@ -6281,7 +6522,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 1115746304
+    "peakMemoryBytes": 1115746304,
+    "boardMs": 8.305,
+    "boardMeasured": true
    }
   },
   {
@@ -6332,7 +6575,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 1385373696
+    "peakMemoryBytes": 1385373696,
+    "boardMs": 9.143,
+    "boardMeasured": true
    }
   },
   {
@@ -6383,7 +6628,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 1350942720
+    "peakMemoryBytes": 1350942720,
+    "boardMs": 12.96,
+    "boardMeasured": true
    }
   },
   {
@@ -6434,7 +6681,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 2149158912
+    "peakMemoryBytes": 2149158912,
+    "boardMs": 13.642,
+    "boardMeasured": true
    }
   },
   {
@@ -6485,7 +6734,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 2819485696
+    "peakMemoryBytes": 2819485696,
+    "boardMs": 17.913,
+    "boardMeasured": true
    }
   },
   {
@@ -6536,7 +6787,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 1693540352
+    "peakMemoryBytes": 1693540352,
+    "boardMs": 14.849,
+    "boardMeasured": true
    }
   },
   {
@@ -6587,7 +6840,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 1560309760
+    "peakMemoryBytes": 1560309760,
+    "boardMs": 21.326,
+    "boardMeasured": true
    }
   },
   {
@@ -6638,7 +6893,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 1442844672
+    "peakMemoryBytes": 1442844672,
+    "boardMs": 19.232,
+    "boardMeasured": true
    }
   },
   {
@@ -6689,7 +6946,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 871239680
+    "peakMemoryBytes": 871239680,
+    "boardMs": 5.794,
+    "boardMeasured": true
    }
   },
   {
@@ -6740,7 +6999,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 326537216
+    "peakMemoryBytes": 326537216,
+    "boardMs": 2.675,
+    "boardMeasured": true
    }
   },
   {
@@ -6791,7 +7052,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 1165918208
+    "peakMemoryBytes": 1165918208,
+    "boardMs": 7.342,
+    "boardMeasured": true
    }
   },
   {
@@ -6842,7 +7105,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 829874176
+    "peakMemoryBytes": 829874176,
+    "boardMs": 11.367,
+    "boardMeasured": true
    }
   },
   {
@@ -6893,7 +7158,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 1290510336
+    "peakMemoryBytes": 1290510336,
+    "boardMs": 14.18,
+    "boardMeasured": true
    }
   },
   {
@@ -6944,7 +7211,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 719335424
+    "peakMemoryBytes": 719335424,
+    "boardMs": 3.49,
+    "boardMeasured": true
    }
   },
   {
@@ -6995,7 +7264,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 1261993984
+    "peakMemoryBytes": 1261993984,
+    "boardMs": 6.37,
+    "boardMeasured": true
    }
   },
   {
@@ -7048,7 +7319,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 575057920
+    "peakMemoryBytes": 575057920,
+    "boardMs": 1.91,
+    "boardMeasured": true
    }
   },
   {
@@ -7101,7 +7374,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 715161600
+    "peakMemoryBytes": 715161600,
+    "boardMs": 2.428,
+    "boardMeasured": true
    }
   },
   {
@@ -7154,7 +7429,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 1267208192
+    "peakMemoryBytes": 1267208192,
+    "boardMs": 4.759,
+    "boardMeasured": true
    }
   },
   {
@@ -7207,7 +7484,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 837201920
+    "peakMemoryBytes": 837201920,
+    "boardMs": 2.989,
+    "boardMeasured": true
    }
   },
   {
@@ -7260,7 +7539,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 2231230464
+    "peakMemoryBytes": 2231230464,
+    "boardMs": 8.924,
+    "boardMeasured": true
    }
   },
   {
@@ -7313,7 +7594,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 355336192
+    "peakMemoryBytes": 355336192,
+    "boardMs": 0.827,
+    "boardMeasured": true
    }
   },
   {
@@ -7366,7 +7649,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 513064960
+    "peakMemoryBytes": 513064960,
+    "boardMs": 1.472,
+    "boardMeasured": true
    }
   },
   {
@@ -7419,7 +7704,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 661106688
+    "peakMemoryBytes": 661106688,
+    "boardMs": 2.05,
+    "boardMeasured": true
    }
   },
   {
@@ -7472,7 +7759,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 773332992
+    "peakMemoryBytes": 773332992,
+    "boardMs": 2.609,
+    "boardMeasured": true
    }
   },
   {
@@ -7526,7 +7815,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 929484800
+    "peakMemoryBytes": 929484800,
+    "boardMs": 5.955,
+    "boardMeasured": true
    }
   },
   {
@@ -7577,7 +7868,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 1307009024
+    "peakMemoryBytes": 1307009024,
+    "boardMs": 54.248,
+    "boardMeasured": true
    }
   },
   {
@@ -7628,7 +7921,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 2130530304
+    "peakMemoryBytes": 2130530304,
+    "boardMs": 113.135,
+    "boardMeasured": true
    }
   },
   {
@@ -7679,7 +7974,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 2785198080
+    "peakMemoryBytes": 2785198080,
+    "boardMs": 32.241,
+    "boardMeasured": true
    }
   },
   {
@@ -7730,7 +8027,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 1833959424
+    "peakMemoryBytes": 1833959424,
+    "boardMs": 11.041,
+    "boardMeasured": true
    }
   },
   {
@@ -7781,7 +8080,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 2596343808
+    "peakMemoryBytes": 2596343808,
+    "boardMs": 15.973,
+    "boardMeasured": true
    }
   },
   {
@@ -7832,7 +8133,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 1543860224
+    "peakMemoryBytes": 1543860224,
+    "boardMs": 5.36,
+    "boardMeasured": true
    }
   },
   {
@@ -7883,7 +8186,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 1523265536
+    "peakMemoryBytes": 1523265536,
+    "boardMs": 5.28,
+    "boardMeasured": true
    }
   },
   {
@@ -7934,7 +8239,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 703782912
+    "peakMemoryBytes": 703782912,
+    "boardMs": 2.22,
+    "boardMeasured": true
    }
   },
   {
@@ -7985,7 +8292,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 1367851008
+    "peakMemoryBytes": 1367851008,
+    "boardMs": 5.553,
+    "boardMeasured": true
    }
   },
   {
@@ -8036,7 +8345,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 2045280256
+    "peakMemoryBytes": 2045280256,
+    "boardMs": 8.759,
+    "boardMeasured": true
    }
   },
   {
@@ -8090,7 +8401,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 500813824
+    "peakMemoryBytes": 500813824,
+    "boardMs": 6.123,
+    "boardMeasured": true
    }
   },
   {
@@ -8144,7 +8457,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 1234386944
+    "peakMemoryBytes": 1234386944,
+    "boardMs": 11.22,
+    "boardMeasured": true
    }
   },
   {
@@ -8195,7 +8510,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 829370368
+    "peakMemoryBytes": 829370368,
+    "boardMs": 9.755,
+    "boardMeasured": true
    }
   },
   {
@@ -8246,109 +8563,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 1213005824
-   }
-  },
-  {
-   "id": "timm-vgg11",
-   "lib": "timm",
-   "name": "vgg11",
-   "display": "vgg11",
-   "task": "class",
-   "family": "VGG",
-   "about": "3×3 합성곱을 깊게 쌓은 초기의 대표적인 분류 모델이에요. 크고 무거워요.",
-   "dataset": "imagenet",
-   "export": {
-    "size": 224,
-    "nominalSize": 224,
-    "plain": false,
-    "relu6": true,
-    "smaller": false,
-    "fixes": []
-   },
-   "preprocess": {
-    "mean": [
-     0.485,
-     0.456,
-     0.406
-    ],
-    "std": [
-     0.229,
-     0.224,
-     0.225
-    ]
-   },
-   "weights": {
-    "file": "model.safetensors",
-    "url": "https://huggingface.co/timm/vgg11.tv_in1k/resolve/main/model.safetensors",
-    "bytes": 531455276,
-    "sha256": "682c023808812148d4e60c76d80ad83dbeaf5d50eb1a952a0b836895003151e5",
-    "tag": "vgg11.tv_in1k",
-    "page": "https://huggingface.co/timm/vgg11.tv_in1k"
-   },
-   "license": {
-    "name": "bsd-3-clause",
-    "url": "https://huggingface.co/timm/vgg11.tv_in1k"
-   },
-   "review": {
-    "ms": 21.236,
-    "params": 132863336,
-    "outcome": "clean",
-    "decoder": null,
-    "preset": "classification-imagenet",
-    "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 4148445184
-   }
-  },
-  {
-   "id": "timm-vgg16",
-   "lib": "timm",
-   "name": "vgg16",
-   "display": "vgg16",
-   "task": "class",
-   "family": "VGG",
-   "about": "3×3 합성곱을 깊게 쌓은 초기의 대표적인 분류 모델이에요. 크고 무거워요.",
-   "dataset": "imagenet",
-   "export": {
-    "size": 224,
-    "nominalSize": 224,
-    "plain": false,
-    "relu6": true,
-    "smaller": false,
-    "fixes": []
-   },
-   "preprocess": {
-    "mean": [
-     0.485,
-     0.456,
-     0.406
-    ],
-    "std": [
-     0.229,
-     0.224,
-     0.225
-    ]
-   },
-   "weights": {
-    "file": "model.safetensors",
-    "url": "https://huggingface.co/timm/vgg16.tv_in1k/resolve/main/model.safetensors",
-    "bytes": 553432986,
-    "sha256": "57b026918159a6bf9faf8405c3a551903768e7138989d9c6224a14227203fad8",
-    "tag": "vgg16.tv_in1k",
-    "page": "https://huggingface.co/timm/vgg16.tv_in1k"
-   },
-   "license": {
-    "name": "bsd-3-clause",
-    "url": "https://huggingface.co/timm/vgg16.tv_in1k"
-   },
-   "review": {
-    "ms": 25.953,
-    "params": 138357544,
-    "outcome": "clean",
-    "decoder": null,
-    "preset": "classification-imagenet",
-    "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 4381515776
+    "peakMemoryBytes": 1213005824,
+    "boardMs": 14.15,
+    "boardMeasured": true
    }
   },
   {
@@ -8399,7 +8616,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 405315584
+    "peakMemoryBytes": 405315584,
+    "boardMs": 0.974,
+    "boardMeasured": true
    }
   },
   {
@@ -8450,7 +8669,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 582410240
+    "peakMemoryBytes": 582410240,
+    "boardMs": 1.636,
+    "boardMeasured": true
    }
   },
   {
@@ -8501,7 +8722,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 1069993984
+    "peakMemoryBytes": 1069993984,
+    "boardMs": 4.59,
+    "boardMeasured": true
    }
   },
   {
@@ -8552,7 +8775,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 2078179328
+    "peakMemoryBytes": 2078179328,
+    "boardMs": 9.172,
+    "boardMeasured": true
    }
   },
   {
@@ -8603,7 +8828,9 @@
     "decoder": null,
     "preset": "classification-imagenet",
     "boardPostProcess": "toolkit",
-    "peakMemoryBytes": 3421982720
+    "peakMemoryBytes": 3421982720,
+    "boardMs": 15.639,
+    "boardMeasured": true
    }
   }
  ]
