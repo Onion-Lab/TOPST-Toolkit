@@ -890,6 +890,26 @@ internal static class ScreenCapture
         Fresh(new TopstToolkit.Core.Updates.SetupRecord(false, "0.1.0")).ShowForCapture(UpdateStage.Ready, manifest);
         await Settle(shell);
         Save(host, Shot("10-ready-just-me"));
+
+        // the patch (only the files that changed, design §7.5 "차등 패치"), and the installer after a patch was undone
+        Fresh(setup).ShowForCapture(UpdateStage.Available, manifest, asPatch: true);
+        await Settle(shell);
+        Save(host, Shot("11-patch-offer"));
+        Fresh(setup).ShowForCapture(UpdateStage.Downloading, manifest, progress: 0.42, asPatch: true);
+        await Settle(shell);
+        Save(host, Shot("12-patch-downloading"));
+        Fresh(setup).ShowForCapture(UpdateStage.Ready, manifest, asPatch: true);
+        await Settle(shell);
+        Save(host, Shot("13-patch-ready"));
+        Fresh(setup).ShowForCapture(UpdateStage.Starting, manifest, asPatch: true);
+        await Settle(shell);
+        Save(host, Shot("14-patch-applying"));
+        Fresh(setup).ShowForCapture(UpdateStage.Available, manifest, patchUndone: true);
+        await Settle(shell);
+        Save(host, Shot("15-patch-undone"));
+        Fresh(setup).ShowForCapture(UpdateStage.Failed, manifest, TopstToolkit.Core.Updates.UpdateProblem.SetupNotStarted, asPatch: true);
+        await Settle(shell);
+        Save(host, Shot("16-patch-declined"));
         return 0;
     }
 
@@ -897,6 +917,8 @@ internal static class ScreenCapture
     /// <c>--update e2e</c>: the real thing, from an app Setup installed (a test install): looks at <c>TOPST_UPDATE_URL</c>,
     /// downloads the installer, hands over to Setup and ends, as the window would close. Setup installs and starts the app
     /// again (on the same desktop: run this on a desktop nobody sees). Writes <c>&lt;prefix&gt;.txt</c> with what happened.
+    /// With a patch on offer the patch is downloaded and swapped instead, and the app starts itself again; a patch that is
+    /// undone goes on with the installer.
     /// </summary>
     private static async Task<int> UpdateEndToEndAsync(string outDir, string prefix)
     {
@@ -948,6 +970,23 @@ internal static class ScreenCapture
         }
         await update.InstallAsync();
         Note($"install: closed={closed} stage {update.Stage} · {update.Headline} · {update.Lead}");
+        if (!closed && !update.IsPatch && update.Stage is UpdateStage.Available or UpdateStage.Ready)
+        {
+            // the patch was undone (design §7.5 "차등 패치"): on with the installer, as the user would
+            Note($"fallback: stage {update.Stage} · {update.PrimaryHelp}");
+            await Settle(shell);
+            Save(host, Shot("4-patch-undone"));
+            if (update.Stage == UpdateStage.Available)
+            {
+                await update.DownloadAsync();
+                Note($"download: stage {update.Stage} · {update.Headline} · {update.ProgressText}");
+            }
+            if (update.Stage == UpdateStage.Ready)
+            {
+                await update.InstallAsync();
+                Note($"install: closed={closed} stage {update.Stage} · {update.Headline} · {update.Lead}");
+            }
+        }
         return closed ? 0 : 1;
     }
 

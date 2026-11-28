@@ -9,7 +9,9 @@ namespace TopstToolkit.Cli;
 ///   update key      [--out &lt;file&gt;]          a new signing key (once); prints the public key for UpdateKeys.Trusted
 ///   update manifest --installer &lt;Setup.exe&gt; (--base &lt;update address&gt; | --url &lt;installer address&gt;)
 ///                   [--version 0.2.0] [--notes &lt;file&gt;] [--page &lt;https page&gt;] [--key &lt;file&gt;] [--out &lt;folder&gt;]
-///                                           update.json + update.json.sig next to the installer
+///                   [--release-folder &lt;app folder&gt; [--files-out &lt;file&gt;] [--previous &lt;file list of the release before&gt;]]
+///                                           update.json + update.json.sig next to the installer; with --release-folder
+///                                           the release's file list, and with --previous a patch of the changed files
 ///   update check    [--base &lt;update address&gt;] [--current 0.1.0]
 ///                                           what an installed app would see at that address
 /// </summary>
@@ -85,7 +87,24 @@ internal static class UpdateCommand
         var trusted = option("--trust") is { } extra ? UpdateKeys.Trusted.Append(extra).ToList() : UpdateKeys.Trusted;
         try
         {
-            var manifest = UpdatePublisher.Write(installer, version, url, notes, option("--page"), key, outDir, trusted);
+            // --release-folder: the app folder the installer was made from. Its file list is written (--files-out) for the next
+            // release, and with --previous (the file list of the release before) only the changed files go into a patch too.
+            UpdatePatch? patch = null;
+            if (option("--release-folder") is { } releaseFolder)
+            {
+                var current = ReleaseFiles.Measure(releaseFolder, version);
+                current.Save(option("--files-out") ?? Path.Combine(outDir, $"files-{current.Version}.json"));
+                if (option("--previous") is { } previousFile && File.Exists(previousFile))
+                {
+                    var previous = ReleaseFiles.Load(previousFile);
+                    var (made, reason) = UpdatePublisher.MakePatch(previous, current, releaseFolder, outDir, url, new FileInfo(installer).Length);
+                    patch = made;
+                    output(made is null
+                        ? $"패치 없음 ({previous.Version} → {current.Version}): {reason}. 앱은 설치 파일로 업데이트해요."
+                        : $"패치 {previous.Version} → {current.Version}: 파일 {made.Files.Count}개 · {made.Size / 1048576.0:N1} MB · {made.Url}");
+                }
+            }
+            var manifest = UpdatePublisher.Write(installer, version, url, notes, option("--page"), key, outDir, trusted, patch: patch);
             output($"{UpdateManifest.FileName} · {UpdateManifest.SignatureFileName} → {outDir}");
             output($"  버전 {manifest.Version} · {manifest.Installer.Size / 1048576.0:N1} MB · SHA-256 {manifest.Installer.Sha256}");
             output($"  설치 파일 주소 {manifest.Installer.Url}");
@@ -122,6 +141,8 @@ internal static class UpdateCommand
         var m = result.Manifest!;
         output($"버전 {m.Version} ({m.Released}) · {(result.IsNewer ? "새 버전" : "새 버전 아님")} · 서명 확인됨");
         output($"설치 파일 {m.Installer.Url} · {m.Installer.Size:N0} B · {m.Installer.Sha256}");
+        if (m.Patch is { } patch)
+            output($"패치 {patch.From} → {m.Version} · 파일 {patch.Files.Count}개 · {patch.Size:N0} B · {patch.Url}");
         foreach (var note in m.Notes)
             output("  · " + note);
         return 0;

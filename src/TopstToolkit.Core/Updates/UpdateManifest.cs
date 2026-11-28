@@ -25,6 +25,8 @@ public enum UpdateProblem
     Interrupted,
     /// <summary>Setup ended before it began to install: the user said no to Windows' question, or it could not start.</summary>
     SetupNotStarted,
+    /// <summary>The patch could not be put in place; every file was put back as it was (the installer is the way then).</summary>
+    PatchFailed,
 }
 
 /// <summary>
@@ -50,6 +52,11 @@ public sealed record UpdateManifest
     [JsonPropertyName("notes")] public IReadOnlyList<string> Notes { get; init; } = [];
     /// <summary>An https page to read more or to download by hand (the copy that was not installed by Setup).</summary>
     [JsonPropertyName("page")] public string? Page { get; init; }
+    /// <summary>
+    /// Only the files that changed since the version before, for an app that is exactly that version (design §7.5
+    /// "차등 패치"); null when this release has no patch, and every app takes the installer.
+    /// </summary>
+    [JsonPropertyName("patch")] public UpdatePatch? Patch { get; init; }
 
     [JsonIgnore] public Version ParsedVersion => UpdateVersion.Parse(Version);
 
@@ -107,7 +114,30 @@ public sealed record UpdateManifest
             Fail("the page must be https");
         if (Released is not null && ReleasedOn is null)
             Fail($"released '{Released}' is not yyyy-MM-dd");
+        if (Patch is { } patch)
+        {
+            if (!UpdateVersion.TryParse(patch.From, out var from) || from >= ParsedVersion)
+                Fail($"the patch starts at '{patch.From}', not at an older version");
+            if (!IsAllowedAddress(patch.Url, allowLoopbackHttp))
+                Fail("the patch address must be https");
+            if (patch.Size is <= 0 or > 1L << 30 || !IsSha256(patch.Sha256))
+                Fail("patch size or sha256");
+            if (patch.Files.Count is 0 or > 5000)
+                Fail($"{patch.Files.Count} patch files");
+            foreach (var file in patch.Files)
+            {
+                if (!UpdatePatch.IsSafePath(file.Path))
+                    Fail($"patch path '{file.Path}'");
+                // a patch only changes or removes files the installer put there; a new file needs the installer (its uninstaller knows it)
+                if (!IsSha256(file.From) || (file.To is not null && !IsSha256(file.To)))
+                    Fail($"patch hashes of '{file.Path}'");
+            }
+            if (patch.Files.Select(f => f.Path.ToLowerInvariant()).Distinct().Count() != patch.Files.Count)
+                Fail("a patch path twice");
+        }
     }
+
+    private static bool IsSha256(string? text) => text is { Length: 64 } && text.All(Uri.IsHexDigit);
 
     /// <summary>https, or plain http to this PC when a test allows it.</summary>
     public static bool IsAllowedAddress(string? text, bool allowLoopbackHttp) =>
@@ -121,6 +151,39 @@ public sealed record UpdateInstaller
     [JsonPropertyName("size")] public long Size { get; init; }
     /// <summary>Lower-case hex.</summary>
     [JsonPropertyName("sha256")] public string Sha256 { get; init; } = "";
+}
+
+/// <summary>
+/// A zip with the files that changed between <see cref="From"/> and the release (design §7.5 "차등 패치"). Each entry
+/// says what the file must be now (<see cref="UpdatePatchFile.From"/>) and what it becomes (<see cref="UpdatePatchFile.To"/>,
+/// null when it goes away); the zip holds the new files under the same paths.
+/// </summary>
+public sealed record UpdatePatch
+{
+    [JsonPropertyName("from")] public string From { get; init; } = "";
+    [JsonPropertyName("url")] public string Url { get; init; } = "";
+    [JsonPropertyName("size")] public long Size { get; init; }
+    [JsonPropertyName("sha256")] public string Sha256 { get; init; } = "";
+    [JsonPropertyName("files")] public IReadOnlyList<UpdatePatchFile> Files { get; init; } = [];
+
+    /// <summary>A path inside the app folder: relative, '/' between parts, no "..", no drive or root.</summary>
+    public static bool IsSafePath(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path) || path.Length > 260 || path.Contains('\\') || path.Contains(':') || path.StartsWith('/'))
+            return false;
+        var invalid = System.IO.Path.GetInvalidFileNameChars();
+        return path.Split('/').All(part => part.Length > 0 && part != "." && part != ".." && part.IndexOfAny(invalid) < 0 && part.Trim() == part);
+    }
+}
+
+public sealed record UpdatePatchFile
+{
+    /// <summary>Relative to the app folder, '/' between parts.</summary>
+    [JsonPropertyName("path")] public string Path { get; init; } = "";
+    /// <summary>SHA-256 of the file in the version the patch starts at.</summary>
+    [JsonPropertyName("from")] public string From { get; init; } = "";
+    /// <summary>SHA-256 of the new file; null when the release no longer has it.</summary>
+    [JsonPropertyName("to")] public string? To { get; init; }
 }
 
 /// <summary>Versions as the app shows them: major.minor.patch ("0.2.0"); a leading "v" and anything after '-' or '+' are ignored.</summary>

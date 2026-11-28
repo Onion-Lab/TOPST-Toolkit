@@ -49,6 +49,14 @@ public partial class App : Application
             return;
         }
 
+        // --apply-patch …: the app, with administrator rights for an app in Program Files, puts an update's changed files in place
+        // (PatchRuns, design §7.5 "차등 패치"); no window
+        if (e.Args.Contains(PatchRuns.Switch))
+        {
+            Shutdown(PatchRuns.RunHelper(e.Args));
+            return;
+        }
+
         // --prepare-user: Setup runs it as the user who installs (not elevated) to make 내 문서\TOPST Toolkit
         if (e.Args.Contains(InstallHelper.PrepareUserSwitch))
         {

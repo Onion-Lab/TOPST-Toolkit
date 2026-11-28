@@ -7,9 +7,15 @@ using TopstToolkit.Core.Components;
 
 namespace TopstToolkit.Core.Updates;
 
-/// <summary>What a check found: a newer version (<see cref="Manifest"/>), none, or a problem.</summary>
+/// <summary>
+/// What a check found: a newer version (<see cref="Manifest"/>), none, or a problem. <see cref="ManifestBytes"/> and
+/// <see cref="Signature"/> are the signed file as it came, for a helper with administrator rights to check again.
+/// </summary>
 public sealed record UpdateCheckResult(UpdateManifest? Manifest, bool IsNewer, UpdateProblem? Problem, string? Detail = null)
 {
+    public byte[]? ManifestBytes { get; init; }
+    public string? Signature { get; init; }
+
     public static UpdateCheckResult Failed(UpdateProblem problem, string detail) => new(null, false, problem, detail);
 }
 
@@ -69,7 +75,11 @@ public sealed class UpdateChecker
         {
             return UpdateCheckResult.Failed(e.Problem, e.Message);
         }
-        return new UpdateCheckResult(manifest, UpdateVersion.IsNewer(manifest.Version, current), null);
+        return new UpdateCheckResult(manifest, UpdateVersion.IsNewer(manifest.Version, current), null)
+        {
+            ManifestBytes = manifestBytes,
+            Signature = signature.Trim(),
+        };
     }
 
     private async Task<byte[]> GetSmallAsync(Uri url, int maxBytes, CancellationToken ct)
@@ -97,50 +107,72 @@ public sealed class UpdateChecker
     /// <paramref name="report"/> gets (bytes done, total), from several threads. Throws <see cref="UpdateException"/>:
     /// <see cref="UpdateProblem.Mismatch"/> (the file is deleted) or <see cref="UpdateProblem.Interrupted"/> (kept, resumes).
     /// </summary>
-    public async Task<string> DownloadAsync(UpdateManifest manifest, string folder, Action<long, long> report, CancellationToken ct = default)
+    public Task<string> DownloadAsync(UpdateManifest manifest, string folder, Action<long, long> report, CancellationToken ct = default) =>
+        DownloadFileAsync(manifest.Installer.Url, manifest.Installer.Size, manifest.Installer.Sha256, InstallerPath(folder, manifest), InstallerPrefix, report, ct);
+
+    /// <summary>The patch of <paramref name="manifest"/> (only the changed files), the same way as the installer.</summary>
+    public Task<string> DownloadPatchAsync(UpdateManifest manifest, string folder, Action<long, long> report, CancellationToken ct = default)
     {
+        var patch = manifest.Patch ?? throw new InvalidOperationException("the release has no patch");
+        return DownloadFileAsync(patch.Url, patch.Size, patch.Sha256, PatchPath(folder, manifest), PatchPrefix, report, ct);
+    }
+
+    private async Task<string> DownloadFileAsync(string url, long expectedSize, string expectedSha, string target, string prefix,
+        Action<long, long> report, CancellationToken ct)
+    {
+        var folder = Path.GetDirectoryName(target)!;
         Directory.CreateDirectory(folder);
-        var target = InstallerPath(folder, manifest);
-        if (IsDownloaded(target, manifest))
+        if (IsDownloaded(target, expectedSize, expectedSha))
         {
-            report(manifest.Installer.Size, manifest.Installer.Size);
+            report(expectedSize, expectedSize);
             return target;
         }
         var part = target + ".part";
         try
         {
-            await ParallelDownload.DownloadAsync(_http, manifest.Installer.Url, part, manifest.Installer.Size, report, ct, _retryDelay).ConfigureAwait(false);
+            await ParallelDownload.DownloadAsync(_http, url, part, expectedSize, report, ct, _retryDelay).ConfigureAwait(false);
         }
         catch (Exception e) when (e is HttpRequestException or IOException && !ct.IsCancellationRequested)
         {
             throw new UpdateException(UpdateProblem.Interrupted, e.Message);
         }
         var (size, sha) = Measure(part);
-        if (size != manifest.Installer.Size || !string.Equals(sha, manifest.Installer.Sha256, StringComparison.OrdinalIgnoreCase))
+        if (size != expectedSize || !string.Equals(sha, expectedSha, StringComparison.OrdinalIgnoreCase))
         {
             TryDelete(part);
             ParallelDownload.DeleteState(part);
-            throw new UpdateException(UpdateProblem.Mismatch, $"the installer has {size} bytes, SHA-256 {sha}; update.json says {manifest.Installer.Size}, {manifest.Installer.Sha256}");
+            throw new UpdateException(UpdateProblem.Mismatch, $"{Path.GetFileName(target)} has {size} bytes, SHA-256 {sha}; update.json says {expectedSize}, {expectedSha}");
         }
         File.Move(part, target, overwrite: true);
-        // older installers are of no further use
-        foreach (var old in Directory.EnumerateFiles(folder, InstallerPrefix + "*"))
+        // older downloads of the same kind are of no further use
+        foreach (var old in Directory.EnumerateFiles(folder, prefix + "*"))
             if (!string.Equals(old, target, StringComparison.OrdinalIgnoreCase) && !old.EndsWith(".log", StringComparison.OrdinalIgnoreCase))
                 TryDelete(old);
         return target;
     }
 
     public const string InstallerPrefix = "TOPST-Toolkit-Setup-";
+    public const string PatchPrefix = "TOPST-Toolkit-Patch-";
 
     public static string InstallerPath(string folder, UpdateManifest manifest) =>
         Path.Combine(folder, InstallerPrefix + UpdateVersion.Show(manifest.ParsedVersion) + ".exe");
 
-    /// <summary>Already downloaded and still the signed file.</summary>
-    public static bool IsDownloaded(string path, UpdateManifest manifest)
+    public static string PatchPath(string folder, UpdateManifest manifest) =>
+        Path.Combine(folder, PatchBuilder.FileName(manifest.Patch?.From ?? "0.0.0", manifest.Version));
+
+    /// <summary>Already downloaded and still the signed installer.</summary>
+    public static bool IsDownloaded(string path, UpdateManifest manifest) =>
+        IsDownloaded(path, manifest.Installer.Size, manifest.Installer.Sha256);
+
+    /// <summary>Already downloaded and still the signed patch.</summary>
+    public static bool IsPatchDownloaded(string path, UpdateManifest manifest) =>
+        manifest.Patch is { } patch && IsDownloaded(path, patch.Size, patch.Sha256);
+
+    private static bool IsDownloaded(string path, long size, string sha)
     {
-        if (!File.Exists(path) || new FileInfo(path).Length != manifest.Installer.Size)
+        if (!File.Exists(path) || new FileInfo(path).Length != size)
             return false;
-        return string.Equals(Measure(path).Sha256, manifest.Installer.Sha256, StringComparison.OrdinalIgnoreCase);
+        return string.Equals(Measure(path).Sha256, sha, StringComparison.OrdinalIgnoreCase);
     }
 
     internal static (long Size, string Sha256) Measure(string path)
@@ -181,8 +213,11 @@ public sealed record PendingUpdate
     [JsonPropertyName("to")] public string To { get; init; } = "";
     [JsonPropertyName("notes")] public IReadOnlyList<string> Notes { get; init; } = [];
     [JsonPropertyName("started")] public DateTimeOffset Started { get; init; }
+    /// <summary>The file the update came from: Setup or, for a patch, the zip; removed once the update went through.</summary>
     [JsonPropertyName("installer")] public string Installer { get; init; } = "";
     [JsonPropertyName("log")] public string? Log { get; init; }
+    /// <summary><c>setup</c> (the installer) or <c>patch</c> (only the changed files).</summary>
+    [JsonPropertyName("kind")] public string Kind { get; init; } = "setup";
 
     private static readonly JsonSerializerOptions Json = new()
     {

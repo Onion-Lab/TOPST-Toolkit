@@ -38,7 +38,7 @@ public static class UpdatePublisher
     /// will. Refuses a key the app does not list in <paramref name="trusted"/>: nobody could install what it signs.
     /// </summary>
     public static UpdateManifest Write(string installer, string version, string installerUrl, IReadOnlyList<string> notes, string? page,
-        ECDsa key, string outDir, IReadOnlyList<string>? trusted = null, DateTime? released = null)
+        ECDsa key, string outDir, IReadOnlyList<string>? trusted = null, DateTime? released = null, UpdatePatch? patch = null)
     {
         trusted ??= UpdateKeys.Trusted;
         var publicKey = UpdateSignature.PublicKeyOf(key);
@@ -53,6 +53,7 @@ public static class UpdatePublisher
             Installer = new UpdateInstaller { Url = installerUrl, Size = size, Sha256 = sha },
             Notes = notes,
             Page = string.IsNullOrWhiteSpace(page) ? null : page,
+            Patch = patch,
         };
         var bytes = manifest.ToBytes();
         // the same checks the app makes, before anything is published
@@ -64,5 +65,29 @@ public static class UpdatePublisher
         File.WriteAllBytes(Path.Combine(outDir, UpdateManifest.FileName), bytes);
         File.WriteAllText(Path.Combine(outDir, UpdateManifest.SignatureFileName), signature + "\n", Encoding.ASCII);
         return parsed;
+    }
+
+    /// <summary>
+    /// The patch from the release before (<paramref name="previous"/>, its file list) to this one (the app folder
+    /// <paramref name="releaseFolder"/>), written into <paramref name="outDir"/> next to the installer. Null with the reason
+    /// when there is none: the folder changed shape, or the patch would not be much smaller than the installer.
+    /// </summary>
+    public static (UpdatePatch? Patch, string? Reason) MakePatch(ReleaseFiles previous, ReleaseFiles current, string releaseFolder,
+        string outDir, string installerUrl, long installerSize)
+    {
+        var comparison = PatchBuilder.Compare(previous, current);
+        if (comparison.Refusal is { } refusal)
+            return (null, refusal);
+        var name = PatchBuilder.FileName(previous.Version, current.Version);
+        var zipPath = Path.Combine(outDir, name);
+        var (size, sha) = PatchBuilder.WriteZip(releaseFolder, comparison.Files, zipPath);
+        if (size * 2 > installerSize)
+        {
+            File.Delete(zipPath);
+            return (null, $"the patch ({size / 1048576.0:0.0} MB) is not much smaller than the installer");
+        }
+        // the patch sits where the installer is (the same GitHub release)
+        var url = installerUrl[..(installerUrl.LastIndexOf('/') + 1)] + Uri.EscapeDataString(name);
+        return (new UpdatePatch { From = previous.Version, Url = url, Size = size, Sha256 = sha, Files = comparison.Files }, null);
     }
 }

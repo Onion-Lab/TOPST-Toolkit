@@ -64,6 +64,24 @@ public partial class UpdateViewModel : ObservableObject
     private bool _installFailed;
     private readonly List<(long Ticks, long Bytes)> _samples = [];
 
+    // ---- the patch (design §7.5 "차등 패치"): only the changed files, when this app is exactly the version it starts at
+    /// <summary>The patch this app takes for the version on offer; null: the installer.</summary>
+    private UpdatePatch? _patch;
+    /// <summary>A patch failed (and was undone) in this session: the installer from now on.</summary>
+    private bool _patchFailed;
+    /// <summary>A sentence before the help text: why the installer is used after all.</summary>
+    private string? _note;
+    private const string PatchUndoneNote = "바뀐 파일을 바꾸지 못해 앱을 원래대로 되돌렸어요. 이번에는 설치 파일로 업데이트해요.";
+    /// <summary>The signed update.json as it came, for the helper with administrator rights to check again.</summary>
+    private byte[]? _manifestBytes;
+    private string? _signature;
+
+    /// <summary>The app's own folder, where a patch goes.</summary>
+    private static string AppDir => Path.TrimEndingDirectorySeparator(AppContext.BaseDirectory);
+
+    /// <summary>The update on offer is a patch (a few MB, no Setup window) rather than the installer.</summary>
+    public bool IsPatch => _patch is not null;
+
     /// <param name="source">Where to look; null (a build without an update address) hides the update screens.</param>
     /// <param name="setup">What Setup recorded about this copy; null when Setup did not install it (no install from the app).</param>
     /// <param name="closeApp">Closes the app once Setup runs (captures replace it).</param>
@@ -112,7 +130,8 @@ public partial class UpdateViewModel : ObservableObject
     {
         UpdateStage.Available => $"새 버전 {NewText}",
         UpdateStage.Downloading => $"업데이트 받는 중 {Progress * 100:0}%",
-        UpdateStage.Ready or UpdateStage.Starting => "업데이트 준비됨",
+        UpdateStage.Ready => "업데이트 준비됨",
+        UpdateStage.Starting => "업데이트하는 중",
         UpdateStage.Updated => $"{Korean.VersionToward(NewText)} 업데이트했어요",
         UpdateStage.Failed when _installFailed => "업데이트 안 됨",
         UpdateStage.Failed when _manifest is not null => $"새 버전 {NewText}",
@@ -131,6 +150,7 @@ public partial class UpdateViewModel : ObservableObject
         UpdateStage.Available => "새 버전",
         UpdateStage.Downloading => "받는 중",
         UpdateStage.Ready => "받음",
+        UpdateStage.Starting when IsPatch => "업데이트 중",
         UpdateStage.Starting => "설치 시작",
         UpdateStage.Updated => "업데이트됨",
         _ => _installFailed ? "업데이트 안 됨" : _problem switch
@@ -138,6 +158,7 @@ public partial class UpdateViewModel : ObservableObject
             UpdateProblem.Offline => "확인 못 함",
             UpdateProblem.Interrupted => "멈춤",
             UpdateProblem.BadSignature or UpdateProblem.BadManifest => "확인 못 함",
+            UpdateProblem.SetupNotStarted when IsPatch => "업데이트 안 함",
             _ => "설치 안 함",
         },
     };
@@ -155,11 +176,14 @@ public partial class UpdateViewModel : ObservableObject
     {
         UpdateStage.Available => $"TOPST Toolkit {NewText}",
         UpdateStage.Downloading => $"TOPST Toolkit {NewText} 받는 중",
+        UpdateStage.Ready when IsPatch => $"{Korean.VersionToward(NewText)} 업데이트할 준비가 됐어요",
         UpdateStage.Ready => $"{Korean.VersionObject(NewText)} 설치할 준비가 됐어요",
+        UpdateStage.Starting when IsPatch => "업데이트하는 중",
         UpdateStage.Starting => "설치를 시작하는 중",
         UpdateStage.Updated => $"{Korean.VersionToward(NewText)} 업데이트했어요",
         UpdateStage.Failed when _installFailed => "업데이트를 마치지 못했어요",
         UpdateStage.Failed when _problem is UpdateProblem.Mismatch => "업데이트를 설치하지 않았어요",
+        UpdateStage.Failed when _problem is UpdateProblem.SetupNotStarted && IsPatch => "업데이트하지 못했어요",
         UpdateStage.Failed when _problem is UpdateProblem.SetupNotStarted => "설치를 시작하지 못했어요",
         UpdateStage.Failed when _problem is UpdateProblem.Interrupted => $"TOPST Toolkit {NewText}",
         _ => $"TOPST Toolkit {CurrentText}",
@@ -178,7 +202,9 @@ public partial class UpdateViewModel : ObservableObject
         UpdateStage.Available => string.Join(" · ", new[] { $"지금 쓰는 버전 {CurrentText}", ReleasedText(), SizeText() }.Where(s => s.Length > 0)),
         UpdateStage.Downloading => "받는 동안 다른 작업을 해도 돼요.",
         UpdateStage.Ready => "받은 파일이 올라온 파일과 같은지 확인했어요.",
-        UpdateStage.Starting => _setup?.AllUsers == false ? "곧 앱이 닫히고 설치 창이 보여요." : "Windows가 물으면 [예]를 눌러 주세요. 곧 앱이 닫히고 설치 창이 보여요.",
+        // the Windows question, where there is one, is in the note under it (ShowsAdminNote)
+        UpdateStage.Starting when IsPatch => "곧 앱이 다시 켜져요.",
+        UpdateStage.Starting => "곧 앱이 닫히고 설치 창이 보여요.",
         UpdateStage.Updated => UpdatedText(),
         _ => _installFailed ? $"{Korean.VersionObject(CurrentText)} 그대로 쓰고 있어요." : _problem switch
         {
@@ -186,6 +212,7 @@ public partial class UpdateViewModel : ObservableObject
             UpdateProblem.BadSignature or UpdateProblem.BadManifest => "올라온 새 버전 정보가 TOPST Toolkit에서 보낸 것인지 확인되지 않아서 쓰지 않았어요.",
             UpdateProblem.Interrupted => "받다가 멈췄어요. 받은 데까지는 남아 있어요.",
             UpdateProblem.Mismatch => "받은 파일이 올라온 파일과 달라요. 받다가 깨졌거나 누가 바꿔 놓았을 수 있어서, 쓰지 않고 지웠어요.",
+            UpdateProblem.SetupNotStarted when IsPatch => "권한을 받지 못해 업데이트하지 않았어요. 지금 버전을 그대로 써요.",
             UpdateProblem.SetupNotStarted => "권한을 받지 못해 설치하지 않았어요. 지금 버전을 그대로 써요.",
             _ => "",
         },
@@ -201,6 +228,7 @@ public partial class UpdateViewModel : ObservableObject
     {
         UpdateStage.Available when _setup is null => "받는 곳 열기",
         UpdateStage.Available => "업데이트 받기",
+        UpdateStage.Ready when IsPatch => "다시 켜서 업데이트",
         UpdateStage.Ready => "다시 켜서 설치",
         UpdateStage.Failed when _installFailed => "다시 시도",
         UpdateStage.Failed => _problem switch
@@ -218,11 +246,13 @@ public partial class UpdateViewModel : ObservableObject
     /// <summary>The filled button for the step forward; the outlined one for a retry or a page to open.</summary>
     public bool PrimaryIsAccent => Stage is UpdateStage.Available or UpdateStage.Ready && !(Stage == UpdateStage.Available && _setup is null);
 
-    public string PrimaryHelp => Stage switch
+    public string PrimaryHelp => (_note is not null && Stage is UpdateStage.Available or UpdateStage.Ready ? _note + " " : "") + Stage switch
     {
         UpdateStage.Available when _setup is null => "이 앱은 설치 파일로 설치하지 않아서, 새 버전은 직접 받아야 해요.",
+        UpdateStage.Available when IsPatch => "바뀐 파일만 받아요. 설치 창 없이 앱이 몇 초 닫혔다가 다시 켜지고, 프로젝트와 설정은 그대로예요.",
         UpdateStage.Available => "설치할 때 앱이 잠시 닫혔다가 다시 켜져요. 프로젝트와 설정은 그대로예요.",
         UpdateStage.Ready when _shell.IsBusy => "하던 작업이 끝나면 설치할 수 있어요.",
+        UpdateStage.Ready when IsPatch => "앱이 몇 초 닫혔다가 다시 켜져요.",
         UpdateStage.Ready => "앱이 닫히고 설치 창이 1분쯤 보였다가 다시 켜져요.",
         UpdateStage.Failed when _problem is UpdateProblem.Mismatch => "다시 받아도 같으면 홈페이지에서 직접 받아 주세요.",
         _ => "",
@@ -270,6 +300,12 @@ public partial class UpdateViewModel : ObservableObject
             Refresh();
         }
         TraceState("start");
+        // the files a patch moved aside: gone once the app that ran from them has closed (a few seconds)
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(TimeSpan.FromSeconds(10));
+            PatchApplier.CleanOld(AppDir);
+        });
         if (_checker is null || !_services.Settings.UpdateCheck)
             return;
         await Task.Delay(StartDelay);
@@ -328,10 +364,12 @@ public partial class UpdateViewModel : ObservableObject
             Refresh();
             return;
         }
-        Offer(result.Manifest!);
+        _manifestBytes = result.ManifestBytes;
+        _signature = result.Signature;
+        await OfferAsync(result.Manifest!);
     }
 
-    private void Offer(UpdateManifest manifest)
+    private async Task OfferAsync(UpdateManifest manifest)
     {
         _manifest = manifest;
         _problem = null;
@@ -339,14 +377,27 @@ public partial class UpdateViewModel : ObservableObject
         Notes.Clear();
         foreach (var note in manifest.Notes)
             Notes.Add(note);
-        var path = UpdateChecker.InstallerPath(Folder, manifest);
-        if (_setup is not null && UpdateChecker.IsDownloaded(path, manifest))
+        // a patch when this app is exactly the version it starts at, file for file (a few MB, no Setup); else the installer
+        _patch = null;
+        if (_setup is not null && !_patchFailed && manifest.Patch is { } patch && _manifestBytes is not null)
         {
-            _installer = path; // downloaded before (an install that did not go through, or "나중에")
+            var obstacle = await Task.Run(() => PatchApplier.CheckApplicable(AppDir, _current, patch));
+            if (obstacle is null)
+                _patch = patch;
+            else
+                Trace.WriteLine("update: no patch, " + obstacle);
+        }
+        var path = _patch is not null ? UpdateChecker.PatchPath(Folder, manifest) : UpdateChecker.InstallerPath(Folder, manifest);
+        var downloaded = _setup is not null && await Task.Run(() => _patch is not null
+            ? UpdateChecker.IsPatchDownloaded(path, manifest) : UpdateChecker.IsDownloaded(path, manifest));
+        if (downloaded)
+        {
+            _installer = path; // downloaded before (an update that did not go through, or "나중에")
             Stage = UpdateStage.Ready;
         }
         else
         {
+            _installer = null;
             Stage = UpdateStage.Available;
         }
         Refresh();
@@ -404,7 +455,7 @@ public partial class UpdateViewModel : ObservableObject
         Stage = UpdateStage.Downloading;
         Refresh();
         var dispatcher = Application.Current?.Dispatcher;
-        long done = 0, total = _manifest.Installer.Size, shown = -1;
+        long done = 0, total = _patch?.Size ?? _manifest.Installer.Size, shown = -1;
         var timer = new System.Windows.Threading.DispatcherTimer(TimeSpan.FromMilliseconds(250), System.Windows.Threading.DispatcherPriority.Background,
             (_, _) => Show(), dispatcher ?? System.Windows.Threading.Dispatcher.CurrentDispatcher);
         void Show()
@@ -420,12 +471,15 @@ public partial class UpdateViewModel : ObservableObject
         timer.Start();
         try
         {
-            _installer = await _checker.DownloadAsync(_manifest, Folder, (d, t) =>
+            Action<long, long> progress = (d, t) =>
             {
                 Interlocked.Exchange(ref done, d);
                 if (t > 0)
                     Interlocked.Exchange(ref total, t);
-            }, _download.Token);
+            };
+            _installer = _patch is not null
+                ? await _checker.DownloadPatchAsync(_manifest, Folder, progress, _download.Token)
+                : await _checker.DownloadAsync(_manifest, Folder, progress, _download.Token);
             Show();
             Stage = UpdateStage.Ready;
         }
@@ -459,6 +513,11 @@ public partial class UpdateViewModel : ObservableObject
     {
         if (_manifest is null || _installer is null || _setup is null || _shell.IsBusy || Stage == UpdateStage.Starting)
             return;
+        if (_patch is not null)
+        {
+            await PatchAsync();
+            return;
+        }
         Stage = UpdateStage.Starting;
         Refresh();
         var version = UpdateVersion.Show(_manifest.ParsedVersion);
@@ -499,6 +558,82 @@ public partial class UpdateViewModel : ObservableObject
         Refresh();
     }
 
+    /// <summary>
+    /// The patch: the changed files swapped in place (with administrator rights for Program Files), then the app starts
+    /// again from them. A patch that fails is undone, and the installer takes over.
+    /// </summary>
+    private async Task PatchAsync()
+    {
+        if (_manifest is null || _installer is null || _manifestBytes is null || _signature is null)
+            return;
+        Stage = UpdateStage.Starting;
+        Refresh();
+        var version = UpdateVersion.Show(_manifest.ParsedVersion);
+        new PendingUpdate
+        {
+            From = CurrentText, To = version, Notes = _manifest.Notes, Started = DateTimeOffset.Now, Installer = _installer, Kind = "patch",
+        }.Save(Folder);
+        var result = await PatchRuns.ApplyAsync(AppDir, _installer, _manifest, _manifestBytes, _signature);
+        if (result.Ok)
+        {
+            // this process still runs the old code; a new one starts from the new files (as the user, never elevated)
+            try
+            {
+                Process.Start(new ProcessStartInfo(Environment.ProcessPath ?? Path.Combine(AppDir, "TopstToolkit.exe"))
+                {
+                    UseShellExecute = false, WorkingDirectory = AppDir,
+                });
+            }
+            catch (Exception e) when (e is System.ComponentModel.Win32Exception or InvalidOperationException)
+            {
+                Trace.WriteLine("update: the app did not start again: " + e.Message); // the files are new; the next start shows it
+            }
+            _closeApp();
+            return;
+        }
+        TryDelete(Path.Combine(Folder, PendingUpdate.FileName));
+        Trace.WriteLine($"update patch: {result.Problem} {result.Error}");
+        if (result.Declined)
+        {
+            _problem = UpdateProblem.SetupNotStarted;
+            Stage = UpdateStage.Failed;
+            Refresh();
+            return;
+        }
+        // undone: the installer from now on, which needs no particular state of the files
+        WritePatchLog(version, result);
+        _patchFailed = true;
+        _note = PatchUndoneNote;
+        TryDelete(_installer);
+        await OfferAsync(_manifest);
+    }
+
+    /// <summary>
+    /// Why a patch was undone, in the updates folder next to Setup's logs (<c>patch-&lt;version&gt;.log</c>): the screen only
+    /// says that it was, and goes on with the installer.
+    /// </summary>
+    private void WritePatchLog(string version, PatchRunResult result)
+    {
+        string[] lines =
+        [
+            $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} 패치 {CurrentText} → {version}: 바꾸지 못해 원래대로 되돌렸어요",
+            $"방법: {(result.ByHelper ? "관리자 권한 도우미(--apply-patch)" : "앱이 직접")}",
+            $"앱 폴더: {AppDir}",
+            $"문제: {result.Problem}",
+            $"내용: {result.Error}",
+            "",
+        ];
+        try
+        {
+            Directory.CreateDirectory(Folder);
+            File.AppendAllLines(Path.Combine(Folder, $"patch-{version}.log"), lines, new System.Text.UTF8Encoding(true));
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            Trace.WriteLine("update: the patch log was not written: " + e.Message);
+        }
+    }
+
     [RelayCommand]
     private void OpenLog()
     {
@@ -510,9 +645,11 @@ public partial class UpdateViewModel : ObservableObject
 
     /// <summary>Screen captures (Dev\ScreenCapture --update demo): one state with the data of a made-up release.</summary>
     internal void ShowForCapture(UpdateStage stage, UpdateManifest manifest, UpdateProblem? problem = null, double progress = 0.42,
-        bool installFailed = false, TimeSpan? took = null)
+        bool installFailed = false, TimeSpan? took = null, bool asPatch = false, bool patchUndone = false)
     {
         _forCapture = true;
+        _patch = asPatch ? manifest.Patch ?? new UpdatePatch { From = CurrentText, Size = 8_900_000 } : null;
+        _note = patchUndone ? PatchUndoneNote : null;
         _manifest = manifest;
         _problem = problem;
         _installFailed = installFailed;
@@ -523,7 +660,8 @@ public partial class UpdateViewModel : ObservableObject
         foreach (var note in manifest.Notes)
             Notes.Add(note);
         Progress = progress;
-        ProgressText = stage == UpdateStage.Downloading ? DownloadLine((long)(manifest.Installer.Size * progress), manifest.Installer.Size, bytesPerSecond: 4.2 * 1048576) : "";
+        var size = _patch?.Size ?? manifest.Installer.Size;
+        ProgressText = stage == UpdateStage.Downloading ? DownloadLine((long)(size * progress), size, bytesPerSecond: 4.2 * 1048576) : "";
         Stage = stage;
         Refresh();
     }
@@ -532,7 +670,9 @@ public partial class UpdateViewModel : ObservableObject
 
     private string ReleasedText() => _manifest?.ReleasedOn is { } day ? $"{day.Month}월 {day.Day}일에 나옴" : "";
 
-    private string SizeText() => _manifest is null ? "" : $"{_manifest.Installer.Size / 1048576.0:0} MB";
+    private string SizeText() => _manifest is null ? "" : _patch is { } patch
+        ? $"{Math.Max(0.1, patch.Size / 1048576.0):0.#} MB (바뀐 파일만)"
+        : $"{_manifest.Installer.Size / 1048576.0:0} MB";
 
     private string UpdatedText()
     {
@@ -582,7 +722,7 @@ public partial class UpdateViewModel : ObservableObject
                      nameof(IsAvailable), nameof(ShowsPill), nameof(PillText), nameof(PillKind), nameof(PillIsDone), nameof(PillIsFailed), nameof(PillIsNew),
                      nameof(IsHighlighted), nameof(ChipText), nameof(ChipKind), nameof(Headline), nameof(Lead), nameof(NotesTitle), nameof(ShowsNotes),
                      nameof(IsDownloading), nameof(PrimaryText), nameof(ShowsPrimary), nameof(PrimaryIsAccent), nameof(PrimaryHelp), nameof(ShowsAdminNote),
-                     nameof(ShowsLog), nameof(LastCheckedText),
+                     nameof(ShowsLog), nameof(LastCheckedText), nameof(IsPatch),
                  })
             OnPropertyChanged(name);
         PrimaryCommand.NotifyCanExecuteChanged();
