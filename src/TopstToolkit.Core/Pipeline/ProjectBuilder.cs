@@ -6,6 +6,7 @@ using TopstToolkit.Core.Workspace;
 using TopstToolkit.Engine.Board;
 using TopstToolkit.Engine.Commands;
 using TopstToolkit.Engine.Errors;
+using TopstToolkit.Engine.Helpers;
 using TopstToolkit.Engine.Parsing;
 
 namespace TopstToolkit.Core.Pipeline;
@@ -47,6 +48,11 @@ public sealed record BuildUpdate(BuildStage Stage, BuildStageState State, string
 public sealed record BuildPaths(string Stem, string Fp32Network, string Int8Network, string CodeDir, string NetSo, string PerfJson,
     string Int8ResultDir, string Fp32ResultDir, string Int8DumpDir)
 {
+    /// <summary>The estimated time on the board (<see cref="BoardTime"/>): what the screens show.</summary>
+    public string BoardTimeJson => BoardTime.JsonFor(PerfJson);
+    /// <summary>The simulator's timeline the estimate reads.</summary>
+    public string TimelineCsv => BoardTime.TimelineFor(PerfJson);
+
     public static BuildPaths? For(ProjectStore store, ProjectFile project)
     {
         if (project.Model is null || ProjectStore.IsDraft(project))
@@ -74,6 +80,10 @@ public sealed class BuildOutcome
     /// <summary>Results of the original FP32 network on the same inputs, for comparison. Empty when that run failed.</summary>
     public IReadOnlyList<SimImageResult> Fp32Results { get; init; } = [];
     public PerfResult? Perf { get; init; }
+    /// <summary>The estimated time on the board: the simulator's value corrected (null when that could not be made).</summary>
+    public BoardTimeEstimate? BoardTime { get; init; }
+    /// <summary>What the screens show: the board estimate, or the simulator's value without one.</summary>
+    public double? InferenceTimeMs => BoardTime?.EstimateMs ?? Perf?.InferenceTimeMs;
     public NetworkBuffers? Buffers { get; init; }
     public string? CodeDir { get; init; }
     public bool BoardLibraryBuilt { get; init; }
@@ -219,7 +229,13 @@ public sealed class ProjectBuilder(EngineSession engine, ProjectStore store)
                     ? Key("netso", compileKey, "fast", HashOf(fast))
                     : Key("netso", compileKey);
         var simulateKey = Key("simulate", "int8+fp32+dump", quantizeKey, string.Join("|", testInputs.Select(FileStager.Sha256Of)), project.Options.Compile.ThConf, project.Options.Compile.ThIou, c.Letterbox);
-        var perfKey = Key("perf", compileKey, project.Options.Perf.ClockPreset);
+        // the estimate with the board's clocks (PerfClocks), corrected for the board (BoardTime); a changed clock or
+        // coefficient file computes it again, nothing else
+        var preset = PerfClocks.PresetOf(project.Options.Perf.ClockPreset);
+        project.Options.Perf.ClockPreset = preset;
+        var npuConfig = PerfClocks.ConfigFor(preset, engine.Layout, engine.Workspace);
+        var boardTimeConfig = BoardTime.ConfigFor(engine.Layout);
+        var perfKey = PerfKey(compileKey, preset, npuConfig, boardTimeConfig);
 
         int reused = 0, executed = 0;
         CompatibilityReport? compatibility = null;
@@ -227,12 +243,12 @@ public sealed class ProjectBuilder(EngineSession engine, ProjectStore store)
         BuildStage? failedStage = null;
 
         IReadOnlyList<SimImageResult> fp32Results = [];
-        BuildOutcome Finish(IReadOnlyList<SimImageResult>? results = null, PerfResult? perf = null, bool boardLibrary = false)
+        BuildOutcome Finish(IReadOnlyList<SimImageResult>? results = null, PerfResult? perf = null, bool boardLibrary = false, BoardTimeEstimate? boardTime = null)
         {
             store.Save(project);
             return new BuildOutcome
             {
-                Error = failure, FailedStage = failedStage, Compatibility = compatibility, Results = results ?? [], Fp32Results = fp32Results, Perf = perf,
+                Error = failure, FailedStage = failedStage, Compatibility = compatibility, Results = results ?? [], Fp32Results = fp32Results, Perf = perf, BoardTime = boardTime,
                 Buffers = NetworkBuffers.ParseFile(Path.Combine(codeDir, "network_buf.txt")), CodeDir = codeDir, BoardLibraryBuilt = boardLibrary,
                 Reused = reused, Executed = executed, PeakMemoryBytes = peakMemory,
             };
@@ -496,21 +512,72 @@ public sealed class ProjectBuilder(EngineSession engine, ProjectStore store)
             }
         }
 
-        // ---------- estimated inference time on the board
+        // ---------- estimated inference time on the board: the simulator with the board's clocks, corrected for the board
         PerfResult? perf = null;
+        BoardTimeEstimate? boardTime = null;
+        var boardTimeJson = paths.BoardTimeJson;
         var perfStep = await Stage(BuildStage.Perf, "perf", perfKey, "보드에서의 추론 시간 계산",
-            on => steps.PerfAsync(new PerfOptions { NpuCmdHeader = Path.Combine(codeDir, "npu_cmd.h"), NpuConfig = engine.Layout.ExampleNpuConfig, Output = perfJson }, onEvent: on, ct: ct),
-            r => r.Perf is { } p ? $"{p.InferenceTimeMs.ToString("0.0", CultureInfo.InvariantCulture)} ms" : "완료",
-            () => PerfResult.ParseFile(perfJson) is { } p ? $"{p.InferenceTimeMs.ToString("0.0", CultureInfo.InvariantCulture)} ms" : "완료", perfJson).ConfigureAwait(false);
+            on => steps.PerfOnBoardAsync(PerfOptionsFor(paths, npuConfig, boardTimeConfig), boardTimeConfig, modelPath, boardTimeJson, onEvent: on, ct: ct),
+            r => MsText(r.BoardTime?.EstimateMs ?? r.Perf?.InferenceTimeMs),
+            () => MsText(BoardTimeEstimate.ParseFile(boardTimeJson)?.EstimateMs ?? PerfResult.ParseFile(perfJson)?.InferenceTimeMs),
+            boardTimeConfig is null ? [perfJson] : [perfJson, boardTimeJson]).ConfigureAwait(false);
         if (failure is null)
         {
             perf = perfStep?.Perf ?? PerfResult.ParseFile(perfJson);
-            project.Headline.InferenceTimeMs = perf?.InferenceTimeMs;
+            boardTime = perfStep?.BoardTime ?? (boardTimeConfig is null ? null : BoardTimeEstimate.ParseFile(boardTimeJson));
+            project.Headline.InferenceTimeMs = boardTime?.EstimateMs ?? perf?.InferenceTimeMs;
             project.Headline.WeightBytes = File.Exists(Path.Combine(codeDir, "quantized_network.bin")) ? new FileInfo(Path.Combine(codeDir, "quantized_network.bin")).Length : null;
             project.Headline.BuiltAt = DateTimeOffset.Now;
             project.Headline.NeedsRebuild = false;
         }
-        return Finish(results, perf, boardBuilt);
+        return Finish(results, perf, boardBuilt, boardTime);
+    }
+
+    private static string MsText(double? ms) => ms is { } v ? $"{v.ToString("0.0", CultureInfo.InvariantCulture)} ms" : "완료";
+
+    /// <summary>The perf stage's key: the compiled network, the clocks and the board correction (its version and coefficients).</summary>
+    private static string PerfKey(string compileKey, string preset, string npuConfig, string? boardTimeConfig) =>
+        Key("perf", compileKey, preset, PerfClocks.HashOf(npuConfig), BoardTime.KeyOf(boardTimeConfig));
+
+    private static PerfOptions PerfOptionsFor(BuildPaths paths, string npuConfig, string? boardTimeConfig) => new()
+    {
+        NpuCmdHeader = Path.Combine(paths.CodeDir, "npu_cmd.h"), NpuConfig = npuConfig, Output = paths.PerfJson,
+        Timeline = boardTimeConfig is null ? null : paths.TimelineCsv,
+    };
+
+    /// <summary>
+    /// The estimate of a built project again when the way it is computed changed since the build (a project built before
+    /// 2026-11-28 with the toolkit's example clocks or without the board correction, new coefficients, or the connected
+    /// board reports other clocks): only the perf simulator and the correction run, a second or two. Null when the
+    /// estimate is already current or cannot be made.
+    /// </summary>
+    public async Task<PerfResult?> RefreshPerfAsync(ProjectFile project, CancellationToken ct = default)
+    {
+        if (BuildPaths.For(store, project) is not { } paths || !project.Steps.TryGetValue("compile", out var compile) || compile.Status != "done"
+            || !File.Exists(Path.Combine(paths.CodeDir, "npu_cmd.h")) || project.Model is null)
+            return null;
+        var preset = PerfClocks.PresetOf(project.Options.Perf.ClockPreset);
+        var config = PerfClocks.ConfigFor(preset, engine.Layout, engine.Workspace);
+        var boardTimeConfig = BoardTime.ConfigFor(engine.Layout);
+        var key = PerfKey(compile.Key, preset, config, boardTimeConfig);
+        if (project.Steps.TryGetValue("perf", out var old) && old.Status == "done" && old.Key == key && File.Exists(paths.PerfJson)
+            && (boardTimeConfig is null || File.Exists(paths.BoardTimeJson)))
+            return null;
+        var result = await engine.For(store.FoldersOf(project))
+            .PerfOnBoardAsync(PerfOptionsFor(paths, config, boardTimeConfig), boardTimeConfig, store.ToAbsolute(project, project.Model.Staged), paths.BoardTimeJson, ct: ct)
+            .ConfigureAwait(false);
+        if (!result.Success)
+            return null;
+        project.Options.Perf.ClockPreset = preset;
+        project.Steps["perf"] = new StepRecord
+        {
+            Key = key, Status = "done", ElapsedSec = Math.Round(result.Run.Elapsed.TotalSeconds, 1), FinishedAt = DateTimeOffset.Now,
+            Outputs = [store.ToRelative(project, paths.PerfJson)],
+        };
+        var perf = result.Perf ?? PerfResult.ParseFile(paths.PerfJson);
+        project.Headline.InferenceTimeMs = result.BoardTime?.EstimateMs ?? perf?.InferenceTimeMs;
+        store.Save(project);
+        return perf;
     }
 
     /// <summary>Reads the results of an earlier simulation from <c>out\result\&lt;network&gt;\&lt;image&gt;\</c>.</summary>

@@ -210,6 +210,7 @@ public sealed class BoardPackager(ProjectStore store, EngineLayout? layout)
         var header = NetworkHeaderSummary.ParseFile(Path.Combine(paths.CodeDir, "network.h"));
         var buffers = NetworkBuffers.ParseFile(Path.Combine(paths.CodeDir, "network_buf.txt"));
         var perf = PerfResult.ParseFile(paths.PerfJson);
+        var boardTime = TopstToolkit.Engine.Helpers.BoardTimeEstimate.ParseFile(paths.BoardTimeJson);
         var preset = PresetCatalog.Find(project.Preset);
         var isDetection = project.Task == "obj";
         var b = new StringBuilder();
@@ -393,7 +394,10 @@ public sealed class BoardPackager(ProjectStore store, EngineLayout? layout)
         {
             b.AppendLine("## 추정 추론 시간");
             b.AppendLine();
-            b.AppendLine($"**{perf.InferenceTimeMs.ToString("0.0##", inv)} ms** (약 {(1000 / perf.InferenceTimeMs).ToString("0", inv)} FPS) — NPU 연산 시간만, 툴킷 예제 클럭 설정 기준입니다. **보드에서 잰 값이 아닙니다.** 실제 값은 `tcnputestapp`으로 확인하세요.");
+            var ms = boardTime?.EstimateMs ?? perf.InferenceTimeMs;
+            b.AppendLine($"**{ms.ToString("0.0##", inv)} ms** (약 {(1000 / ms).ToString("0", inv)} FPS) — NPU 연산 시간만. " + (boardTime is not null
+                ? $"툴킷 시뮬레이터 값({perf.InferenceTimeMs.ToString("0.0##", inv)} ms, TOPST AI-G 보드 클럭)에 보드에서 잰 차이를 더한 추정입니다. **이 모델을 보드에서 잰 값은 아닙니다.**"
+                : "툴킷 시뮬레이터가 계산한 값입니다. **보드에서 잰 값이 아닙니다.**") + " 실제 값은 TOPST Toolkit 보드 화면의 속도 재기나 `tcnputestapp`으로 확인하세요.");
             b.AppendLine();
         }
 

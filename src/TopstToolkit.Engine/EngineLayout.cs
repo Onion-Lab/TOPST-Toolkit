@@ -60,6 +60,18 @@ public sealed class EngineLayout
     /// <summary>The toolkit.s example clock file (<c>cclk1_aclk.6_pclk.1.json</c>). Not the board's real clocks (D4).</summary>
     public string ExampleNpuConfig => Path.Combine(ToolkitRoot, "tools_sdk", "perf_sim", "cclk1_aclk.6_pclk.1.json");
 
+    /// <summary>
+    /// The TOPST AI-G board's own clocks for the estimate (<c>engine\board\topst-ai-g-npu.json</c>, next to the helper
+    /// scripts): NPU core 1000, AXI 800, NPU CPU 800, APB 200 MHz as the board reports them (design §11, 2026-11-28).
+    /// </summary>
+    public string BoardNpuConfig => Path.Combine(Path.GetDirectoryName(Path.GetFullPath(HelpersDir))!, "board", "topst-ai-g-npu.json");
+
+    /// <summary>
+    /// What the board does differently from the simulator, fitted to its measured times (<c>engine\board\topst-ai-g-time.json</c>,
+    /// read by <c>engine\helpers\board_time.py</c>; design §11, 2026-11-28).
+    /// </summary>
+    public string BoardTimeConfig => Path.Combine(Path.GetDirectoryName(Path.GetFullPath(HelpersDir))!, "board", "topst-ai-g-time.json");
+
     public string ScriptFor(ToolKind tool) => tool switch
     {
         ToolKind.Converter => Path.Combine(EnlightSdkDir, "converter.py"),

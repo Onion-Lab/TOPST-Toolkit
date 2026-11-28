@@ -25,6 +25,8 @@ public sealed class StepResult
     public CompatibilityReport? Compatibility { get; init; }
     public IReadOnlyList<SimImageResult> SimResults { get; init; } = [];
     public PerfResult? Perf { get; init; }
+    /// <summary>perf: the simulator's value corrected for the board (null when the correction could not be made).</summary>
+    public BoardTimeEstimate? BoardTime { get; init; }
     public NetworkBuffers? Buffers { get; init; }
     public double? WorkBufferMiB { get; init; }
     public IReadOnlyList<string> CreatedFiles { get; init; } = [];
@@ -171,18 +173,68 @@ public sealed class StepRunner
         return new StepResult { Step = step, Run = run, Error = error, Output = options.ResultRoot, SimResults = results };
     }
 
+    /// <summary>The CSV perf_simulator's --debug writes beside the npu_cmd.h it reads.</summary>
+    public const string PerfTimelineFileName = "perf_sim_out.csv";
+
     public async Task<StepResult> PerfAsync(PerfOptions options, string step = "perf",
         Action<ToolEvent>? onEvent = null, CancellationToken ct = default)
     {
         // perf_simulator does not create its output folder (feature/09 §6-1).
         Directory.CreateDirectory(Path.GetDirectoryName(options.Output)!);
         DeleteStale(options.Output);
+        // the timeline lands in the compiler's folder, which goes to the board and into exports: it moves out right after
+        var written = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(options.NpuCmdHeader))!, PerfTimelineFileName);
+        if (options.Timeline is not null)
+            DeleteStale(options.Timeline, written);
         var run = await RunAsync(_session.Commands.Perf(options), step, onEvent, ct).ConfigureAwait(false);
+        if (options.Timeline is not null && File.Exists(written))
+        {
+            if (IsInsideProject(options.Timeline))
+                File.Move(written, options.Timeline, overwrite: true);
+            else
+                DeleteStale(written);
+        }
         var error = CommonVerdict(run);
         var perf = PerfResult.ParseFile(options.Output);
         if (error is null && perf is null)
             error = ErrorClassifier.MissingOutputs([options.Output]);
         return new StepResult { Step = step, Run = run, Error = error, Output = options.Output, Perf = perf };
+    }
+
+    /// <summary>
+    /// The board time estimate (design §11, 2026-11-28): the simulator with its timeline, then <c>board_time.py</c> with the
+    /// coefficients of <paramref name="coefficients"/> and the model's first convolution, the answer kept in
+    /// <paramref name="boardTimeJson"/>. A failed correction leaves the simulator's value and no answer file; only a failed
+    /// simulator fails the step. Without coefficients (an engine from before) it is the simulator alone.
+    /// </summary>
+    public async Task<StepResult> PerfOnBoardAsync(PerfOptions options, string? coefficients, string? model, string boardTimeJson,
+        string step = "perf", Action<ToolEvent>? onEvent = null, CancellationToken ct = default)
+    {
+        DeleteStale(boardTimeJson);
+        var perf = await PerfAsync(options, step, onEvent, ct).ConfigureAwait(false);
+        if (!perf.Success || coefficients is null || !File.Exists(coefficients))
+            return perf;
+        var corrected = await BoardTimeAsync(options.Output, coefficients, options.Timeline, model, boardTimeJson, ct).ConfigureAwait(false);
+        return new StepResult
+        {
+            Step = perf.Step, Run = perf.Run, Output = perf.Output, Perf = perf.Perf,
+            BoardTime = corrected.Value is { Ok: true, EstimateMs: > 0 } value && File.Exists(boardTimeJson) ? value : null,
+        };
+    }
+
+    /// <summary>Runs <c>board_time.py</c> on a simulator answer and copies its JSON to <paramref name="output"/> when it succeeded.</summary>
+    public async Task<HelperResult<BoardTimeEstimate>> BoardTimeAsync(string perfJson, string coefficients, string? timeline, string? model,
+        string output, CancellationToken ct = default)
+    {
+        DeleteStale(output);
+        var result = await _session.Helpers.BoardTimeAsync(perfJson, coefficients, timeline, model, Request("board-time"), ct).ConfigureAwait(false);
+        var produced = Path.Combine(result.Run.WorkingDirectory, "board_time.json");
+        if (result.Value is { Ok: true, EstimateMs: > 0 } && File.Exists(produced) && IsInsideProject(output))
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(output)!);
+            File.Copy(produced, output, overwrite: true);
+        }
+        return result;
     }
 
     /// <summary>

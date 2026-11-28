@@ -1,0 +1,16 @@
+{
+  "about": "TOPST AI-G board: NPU time = simulator (board clocks) + fixedMs + avgPoolMsPerMillion x average pooling (output values x kernel side, millions) + maxPoolStride2Scale x (simulator ms of stride-2 max pooling / 2) + bigStemMsPerMillion x first convolution larger than 3x3 (output pixels x 32-channel passes, millions) + depthwiseScale x (simulator ms of depthwise convolutions / 2). Fitted to the times measured on the board (engine/helpers/board_time.py, design section 11).",
+  "fitted": "2026-11-28",
+  "fixedMs": 0.06801,
+  "avgPoolMsPerMillion": 7.29579,
+  "maxPoolStride2Scale": -0.38034,
+  "bigStemMsPerMillion": 23.17621,
+  "depthwiseScale": 0.50122,
+  "check": {
+    "models": 166,
+    "families": 36,
+    "meanPercent": 2.5,
+    "maxPercent": 16.2,
+    "smallMeanMs": 0.029
+  }
+}

@@ -99,4 +99,9 @@ public sealed class PerfOptions
     public required string NpuCmdHeader { get; init; }
     public required string NpuConfig { get; init; }
     public required string Output { get; init; }
+    /// <summary>
+    /// Where to keep the simulator's timeline: with a path the tool also runs with <c>--debug</c> (one CSV row per start of
+    /// the DMA engine's and the two cores' ops, written beside <c>npu_cmd.h</c>) and the CSV is moved here. Null = none.
+    /// </summary>
+    public string? Timeline { get; init; }
 }

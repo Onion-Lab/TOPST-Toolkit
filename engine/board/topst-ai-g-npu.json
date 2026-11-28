@@ -1,0 +1,8 @@
+{
+    "CCLK": 1000,
+    "ACLK": 800,
+    "PCLK": 200,
+    "CPU_CLK": 800,
+    "DRAM_UTILIZATION": 0.9,
+    "DRAM_RD_LATENCY": { "ACLK": 100 }
+}

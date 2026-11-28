@@ -137,6 +137,9 @@ public sealed class CommandBuilder
             "--npu-config", RequireAbsolute(o.NpuConfig, "npu config"),
             "--output", output,
         };
+        // its developer switch: the per-op timeline the board time estimate reads (board_time.py, design §11 2026-11-28)
+        if (o.Timeline is not null)
+            a.Add("--debug");
         // perf_simulator has no --model-config option.
         return new ToolInvocation(ToolKind.PerfSimulator, _layout.ScriptFor(ToolKind.PerfSimulator), a, "성능 추정");
     }

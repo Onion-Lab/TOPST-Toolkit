@@ -18,7 +18,7 @@
             <DockPanel DockPanel.Dock="Top" LastChildFill="False" Margin="0,0,0,16">
                 <TextBlock DockPanel.Dock="Left" Text="6 성능" Style="{StaticResource Page.Title}"/>
                 <c:Chip DockPanel.Dock="Left" Text="추정값" Kind="Info" Margin="10,0,0,0"/>
-                <TextBlock DockPanel.Dock="Right" Text="툴킷이 계산한 값입니다 — 보드에서 잰 값이 아닙니다" Style="{StaticResource Page.Note}"/>
+                <TextBlock DockPanel.Dock="Right" Text="{Binding PageNote}" Style="{StaticResource Page.Note}"/>
             </DockPanel>
 
             <Border DockPanel.Dock="Top" Style="{StaticResource Callout.Warning}" Margin="0,0,0,12" Visibility="{Binding IsStale, Converter={StaticResource VisibleWhen}}">
@@ -58,7 +58,7 @@
                                                        LineStackingStrategy="BlockLineHeight" LineHeight="56"/>
                                             <TextBlock Text="ms" FontFamily="{StaticResource Font.Brand}" FontSize="20" FontWeight="SemiBold" Foreground="White" Margin="8,0,0,9" VerticalAlignment="Bottom"/>
                                         </StackPanel>
-                                        <TextBlock Text="사진 한 장을 NPU가 계산하는 시간 · 예제 클럭 기준 — 보드 기준 아님" Style="{StaticResource Text.Caption}" Foreground="{StaticResource Brush.Night.Caption}"/>
+                                        <TextBlock Text="{Binding TimeCaption}" Style="{StaticResource Text.Caption}" Foreground="{StaticResource Brush.Night.Caption}"/>
                                     </StackPanel>
                                     <StackPanel DockPanel.Dock="Right" VerticalAlignment="Center">
                                         <TextBlock Text="{Binding FpsText}" FontFamily="{StaticResource Font.Ui}" FontSize="18" FontWeight="SemiBold" TextAlignment="Right">
@@ -112,10 +112,10 @@
                         <StackPanel>
                             <DockPanel LastChildFill="False" Margin="0,0,0,8">
                                 <TextBlock DockPanel.Dock="Left" Text="추정값이에요" Style="{StaticResource Text.Subtitle}"/>
-                                <c:Chip DockPanel.Dock="Right" Text="예제 클럭" Kind="Warn" ToolTip="{Binding ClocksText}"/>
+                                <c:Chip DockPanel.Dock="Right" Text="{Binding ClockChipText}" Kind="{Binding ClockChipKind}" ToolTip="{Binding ClocksText}"/>
                             </DockPanel>
                             <!-- the clocks themselves (CCLK, ACLK ...) are in the chip's tooltip: a beginner needs the sentence, not the table -->
-                            <TextBlock Text="툴킷에 들어 있는 예제 클럭으로 계산한 시간이에요. 보드의 실제 클럭에 따라 달라질 수 있어서, 정확한 시간은 보드에서 재야 합니다." Style="{StaticResource Text.Body}" FontSize="13" LineHeight="20" TextWrapping="Wrap"/>
+                            <TextBlock Text="{Binding ClockNote}" Style="{StaticResource Text.Body}" FontSize="13" LineHeight="20" TextWrapping="Wrap"/>
                         </StackPanel>
                     </Border>
                     <Border Style="{StaticResource Card}" Margin="0,12,0,0">

@@ -203,6 +203,22 @@ public sealed class BoardAgent
         return Ssh.RunCheckedAsync($"rm -rf {SshClient.Quote(RemoteDirOf(folder))}", ct: ct);
     }
 
+    /// <summary>
+    /// The clocks the board runs its NPU at (debugfs, read only): core, AXI, APB and the NPU's CPU of cluster 0, in MHz —
+    /// what the estimate of 6 성능 has to assume (Pipeline.PerfClocks). Null when the board does not say (no debugfs).
+    /// </summary>
+    public async Task<Pipeline.NpuClocks?> ReadClocksAsync(CancellationToken ct = default)
+    {
+        string[] names = ["npubus0_core", "npubus0_axi", "npubus_apb", "npubus0_cpu"];
+        var result = await Ssh.RunAsync(string.Join(' ', names.Select(n => $"cat /sys/kernel/debug/clk/{n}/clk_rate")) + " 2>/dev/null",
+            timeout: TimeSpan.FromSeconds(15), ct: ct).ConfigureAwait(false);
+        var hz = result.StdOut.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(l => long.TryParse(l, out var v) ? v : 0).ToArray();
+        return hz.Length == names.Length && hz.All(v => v > 0)
+            ? new Pipeline.NpuClocks(hz[0] / 1e6, hz[1] / 1e6, hz[2] / 1e6, hz[3] / 1e6)
+            : null;
+    }
+
     /// <summary>Runs the network alone on one NPU <paramref name="count"/> times (no picture): the board's real time.</summary>
     public async Task<BoardBenchResult> BenchAsync(string modelDir, int npu, int count = 100, CancellationToken ct = default)
     {

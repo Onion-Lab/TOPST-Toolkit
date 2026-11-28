@@ -372,7 +372,7 @@ if (command == "zoo")
             {
                 var outcome = await new ProjectBuilder(session, zooStore).BuildAsync(project, _ => { }, null, cts.Token);
                 Out(outcome.Success
-                    ? $"  빌드: 성공 · 추정 {outcome.Perf?.InferenceTimeMs} ms (검토 {model.Review.Ms} ms) · net.so {(outcome.BoardLibraryBuilt ? "있음" : "없음")}"
+                    ? $"  빌드: 성공 · 추정 {outcome.Perf?.InferenceTimeMs} ms (검토 {model.Review.Ms} ms) · 보드 추정 {outcome.BoardTime?.EstimateMs} ms · net.so {(outcome.BoardLibraryBuilt ? "있음" : "없음")}"
                     : $"  빌드: 실패 ({outcome.FailedStage}) — {outcome.Error!.Title} · {outcome.Error.Detail}");
                 foreach (var r in outcome.Results.Take(2))
                     Out("    " + (r.Parsed?.Kind == TopstToolkit.Engine.Parsing.SimResultKind.Detection
@@ -441,7 +441,7 @@ if (command == "project")
         }, null, cts.Token);
         ok = outcome.Success;
         Out(outcome.Success
-            ? $"  결과: 성공 · 실행 {outcome.Executed} · 재사용 {outcome.Reused} · 추정 {outcome.Perf?.InferenceTimeMs} ms · net.so {(outcome.BoardLibraryBuilt ? "있음" : "없음")} · 사진 {outcome.Results.Count}장"
+            ? $"  결과: 성공 · 실행 {outcome.Executed} · 재사용 {outcome.Reused} · 추정 {outcome.Perf?.InferenceTimeMs} ms · 보드 추정 {outcome.BoardTime?.EstimateMs} ms · net.so {(outcome.BoardLibraryBuilt ? "있음" : "없음")} · 사진 {outcome.Results.Count}장"
             : $"  결과: 실패 ({outcome.FailedStage}) — {outcome.Error!.Title} · {outcome.Error.Detail}");
         foreach (var layer in outcome.Compatibility?.Layers ?? []) Out($"    비호환: {layer.Index} {layer.Name} ({layer.Type}) — {layer.Description}");
         if (project.Steps.TryGetValue("netso", out var netso))

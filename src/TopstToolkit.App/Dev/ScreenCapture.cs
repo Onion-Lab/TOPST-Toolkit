@@ -1021,6 +1021,7 @@ internal static class ScreenCapture
             {
                 case DataViewModel data: await data.Ready; break;
                 case ResultViewModel result: await result.Ready; break;
+                case PerfViewModel perf: await perf.Refreshed; break;
             }
             await Dispatcher.Yield(DispatcherPriority.ApplicationIdle);
         }

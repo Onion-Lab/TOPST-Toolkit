@@ -111,6 +111,21 @@ public partial class BoardConnection : ObservableObject
         settings.BoardName = Status.Host;
         try { settings.Save(); } catch (IOException) { } catch (UnauthorizedAccessException) { }
         StatusChanged?.Invoke(this, EventArgs.Empty);
+        _ = UseBoardClocksAsync(agent);
+    }
+
+    /// <summary>
+    /// The estimates of 6 성능 assume the TOPST AI-G board's clocks; a board that runs its NPU at others makes the next
+    /// estimates use those (PerfClocks, design §11 2026-11-28). In the background: the connection does not wait for it.
+    /// </summary>
+    private async Task UseBoardClocksAsync(BoardAgent agent)
+    {
+        try
+        {
+            if (await agent.ReadClocksAsync() is { } clocks && _services.EngineLayout is { } layout)
+                TopstToolkit.Core.Pipeline.PerfClocks.UseBoardClocks(clocks, layout, _services.Projects.Workspace);
+        }
+        catch (Exception e) when (e is BoardException or IOException or UnauthorizedAccessException or InvalidOperationException) { }
     }
 
     public async Task DisconnectAsync()

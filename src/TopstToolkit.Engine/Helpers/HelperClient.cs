@@ -124,6 +124,22 @@ public sealed class HelperClient
         return RunAsync<ZooExportReport>("zoo_export", "모델 모음 내보내기", request, args, ct);
     }
 
+    /// <summary>
+    /// The estimated NPU time on the TOPST AI-G board (design §11, 2026-11-28): the simulator's value (<paramref name="perfJson"/>)
+    /// with what the board does differently, from the simulator's timeline and the model's first convolution. Without one
+    /// of them that part is left out and the answer says so. Runs without the SDK.
+    /// </summary>
+    public Task<HelperResult<BoardTimeEstimate>> BoardTimeAsync(string perfJson, string coefficients, string? timeline, string? model,
+        ToolRunRequest request, CancellationToken ct = default)
+    {
+        var args = new List<string> { "--perf", Path.GetFullPath(perfJson), "--coefficients", Path.GetFullPath(coefficients) };
+        if (timeline is not null && File.Exists(timeline))
+            args.AddRange(["--timeline", Path.GetFullPath(timeline)]);
+        if (model is not null && File.Exists(model))
+            args.AddRange(["--model", Path.GetFullPath(model)]);
+        return RunAsync<BoardTimeEstimate>("board_time", "보드 시간 보정", request, args, ct);
+    }
+
     public async Task<HelperResult<T>> RunAsync<T>(string helper, string title, ToolRunRequest request, IReadOnlyList<string> arguments, CancellationToken ct)
         where T : class
     {

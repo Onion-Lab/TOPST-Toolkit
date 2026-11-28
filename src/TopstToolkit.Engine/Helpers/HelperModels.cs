@@ -3,6 +3,52 @@ using System.Text.Json.Serialization;
 
 namespace TopstToolkit.Engine.Helpers;
 
+/// <summary>
+/// Output of <c>engine\helpers\board_time.py</c> (design §11, 2026-11-28): the estimated NPU time on the TOPST AI-G board,
+/// the simulator's value plus what the board was measured to do differently. Kept next to the simulator's JSON.
+/// </summary>
+public sealed class BoardTimeEstimate
+{
+    [JsonPropertyName("ok")] public bool Ok { get; init; }
+    /// <summary>perf_simulator's value with the board's clocks.</summary>
+    [JsonPropertyName("simulatorMs")] public double SimulatorMs { get; init; }
+    /// <summary>The estimate: what the screens show.</summary>
+    [JsonPropertyName("estimateMs")] public double EstimateMs { get; init; }
+    [JsonPropertyName("terms")] public BoardTimeTerms? Terms { get; init; }
+    /// <summary>False when the timeline or the model could not be read and that part was left out.</summary>
+    [JsonPropertyName("complete")] public bool Complete { get; init; }
+    [JsonPropertyName("problems")] public List<string> Problems { get; init; } = [];
+
+    public double CorrectionMs => EstimateMs - SimulatorMs;
+
+    public static BoardTimeEstimate? ParseFile(string path)
+    {
+        if (!File.Exists(path))
+            return null;
+        try
+        {
+            var value = JsonSerializer.Deserialize<BoardTimeEstimate>(File.ReadAllText(path));
+            return value is { Ok: true, EstimateMs: > 0 } ? value : null;
+        }
+        catch (JsonException) { return null; }
+    }
+}
+
+/// <summary>The parts of <see cref="BoardTimeEstimate.CorrectionMs"/>, in ms.</summary>
+public sealed class BoardTimeTerms
+{
+    /// <summary>Every run: starting the NPU and waiting for it.</summary>
+    [JsonPropertyName("fixedMs")] public double FixedMs { get; init; }
+    /// <summary>Average pooling, which the simulator gives no time.</summary>
+    [JsonPropertyName("avgPoolMs")] public double AvgPoolMs { get; init; }
+    /// <summary>Stride-2 max pooling, faster on the board than the simulator thinks (negative).</summary>
+    [JsonPropertyName("maxPoolMs")] public double MaxPoolMs { get; init; }
+    /// <summary>A first convolution with a kernel larger than 3x3.</summary>
+    [JsonPropertyName("bigStemMs")] public double BigStemMs { get; init; }
+    /// <summary>Depthwise convolutions, slower on the board than the simulator thinks.</summary>
+    [JsonPropertyName("depthwiseMs")] public double DepthwiseMs { get; init; }
+}
+
 /// <summary>Output of <c>engine\helpers\engine_check.py</c>.</summary>
 public sealed class EngineCheckReport
 {

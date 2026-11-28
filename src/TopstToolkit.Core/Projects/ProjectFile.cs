@@ -257,7 +257,8 @@ public sealed class CompileSettings
 
 public sealed class PerfSettings
 {
-    public string ClockPreset { get; set; } = "toolkit-example";
+    /// <summary>The clocks of the estimate (<see cref="Pipeline.PerfClocks"/>): the TOPST AI-G board's since 2026-11-28.</summary>
+    public string ClockPreset { get; set; } = Pipeline.PerfClocks.BoardPreset;
 }
 
 public sealed class StepRecord
