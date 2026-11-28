@@ -65,7 +65,15 @@ public sealed class UpdateChecker
             }
         }
         if (!UpdateSignature.Verify(manifestBytes, signature, _source.Keys))
-            return UpdateCheckResult.Failed(UpdateProblem.BadSignature, "update.json is not signed by a key this app trusts");
+        {
+            // right after a release the "latest" address can answer for a moment with update.json of one release and the
+            // signature of another (a cache): then the signature published next to the installer this update.json names
+            if (await SignatureBesideInstallerAsync(manifestBytes, ct).ConfigureAwait(false) is { } beside
+                && UpdateSignature.Verify(manifestBytes, beside, _source.Keys))
+                signature = beside;
+            else
+                return UpdateCheckResult.Failed(UpdateProblem.BadSignature, "update.json is not signed by a key this app trusts");
+        }
         UpdateManifest manifest;
         try
         {
@@ -80,6 +88,45 @@ public sealed class UpdateChecker
             ManifestBytes = manifestBytes,
             Signature = signature.Trim(),
         };
+    }
+
+    /// <summary>
+    /// The signature next to the installer that <paramref name="manifestBytes"/> names (on GitHub the release's own folder,
+    /// <c>…/releases/download/v1.2.3/update.json.sig</c>), or null. update.json is not believed yet: its address only says
+    /// where to look, the signature still has to be one of the app's keys, and an address that is not https (or a test
+    /// server on this PC) is not asked.
+    /// </summary>
+    private async Task<string?> SignatureBesideInstallerAsync(byte[] manifestBytes, CancellationToken ct)
+    {
+        Uri beside;
+        try
+        {
+            using var json = JsonDocument.Parse(manifestBytes);
+            if (json.RootElement.GetProperty("installer").GetProperty("url").GetString() is not { } installer
+                || !UpdateManifest.IsAllowedAddress(installer, _source.IsLocalTest))
+                return null;
+            beside = new Uri(new Uri(installer), UpdateManifest.SignatureFileName);
+        }
+        catch (Exception e) when (e is JsonException or KeyNotFoundException or InvalidOperationException or UriFormatException or ArgumentException)
+        {
+            return null;
+        }
+        if (beside == _source.SignatureUrl)
+            return null; // the same file again
+        using var limit = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        limit.CancelAfter(CheckTimeout);
+        try
+        {
+            return Encoding.ASCII.GetString(await GetSmallAsync(beside, 4096, limit.Token).ConfigureAwait(false));
+        }
+        catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+        {
+            return null;
+        }
+        catch (Exception e) when (e is HttpRequestException or IOException)
+        {
+            return null;
+        }
     }
 
     private async Task<byte[]> GetSmallAsync(Uri url, int maxBytes, CancellationToken ct)
